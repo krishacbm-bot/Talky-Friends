@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Language Lab - Modules</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #080d1c;
+    --card1: #10b981;
+    --card2: #f43f5e;
+    --card3: #3b82f6;
+    --card4: #f59e0b;
+    --accent: #fb923c;
+    --white: #ffffff;
+    --ink: #1e1b4b;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Baloo 2', cursive;
+    min-height: 100vh;
+    background: #080d1c;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  canvas#stars {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .floater {
+    position: fixed;
+    opacity: 0.08;
+    animation: drift linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes drift {
+    0%   { transform: translateY(110vh) rotate(0deg); }
+    100% { transform: translateY(-15vh) rotate(360deg); }
+  }
+
+  .header {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 48px 20px 10px;
+  }
+
+  .header-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'Caveat', cursive;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 4px 18px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+    box-shadow: 3px 3px 0 #c2410c;
+    text-transform: uppercase;
+  }
+
+  .header h1 {
+    font-family: 'Baloo 2', cursive;
+    font-weight: 800;
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    color: #fff;
+    line-height: 1.1;
+    letter-spacing: -1px;
+  }
+
+  .header h1 .highlight {
+    color: var(--accent);
+    position: relative;
+    display: inline-block;
+  }
+
+  .header h1 .highlight::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: #f43f5e;
+    border-radius: 999px;
+    transform: rotate(-1deg);
+  }
+
+  .header .subtitle {
+    
+    font-size: 1.4rem;
+    color: #94a3b8;
+    margin-top: 10px;
+    font-weight: 500;
+  }
+
+  .grade-pill {
+    display: inline-block;
+    margin-top: 14px;
+    background: linear-gradient(135deg, #f43f5e, #f59e0b);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 6px 22px;
+    border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(244,63,94,0.4);
+    letter-spacing: 0.5px;
+  }
+
+  .container {
+    position: relative;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 260px));
+    justify-content: center;
+    gap: 28px;
+    padding: 50px 24px 160px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .card {
+    position: relative;
+    border-radius: 24px;
+    padding: 36px 20px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s;
+    border: 3px solid transparent;
+    overflow: hidden;
+    animation: cardIn 0.6s both;
+  }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(40px) scale(0.9); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .card:nth-child(1) { animation-delay: 0.05s; background: linear-gradient(145deg, #0d2e20, #064e35); border-color: #10b98144; }
+  .card:nth-child(2) { animation-delay: 0.15s; background: linear-gradient(145deg, #2d0d15, #7f1d2e); border-color: #f43f5e44; }
+  .card:nth-child(3) { animation-delay: 0.25s; background: linear-gradient(145deg, #0d1a35, #1e3a7a); border-color: #3b82f644; }
+  .card:nth-child(4) { animation-delay: 0.35s; background: linear-gradient(145deg, #2c1a00, #78400e); border-color: #f59e0b44; }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 22px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    background: rgba(255,255,255,0.04);
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  .card:hover { transform: translateY(-12px) scale(1.04) rotate(-0.5deg); }
+
+  .card:nth-child(1):hover { box-shadow: 0 20px 60px rgba(16,185,129,0.35); border-color: #10b98188; }
+  .card:nth-child(2):hover { box-shadow: 0 20px 60px rgba(244,63,94,0.35);  border-color: #f43f5e88; }
+  .card:nth-child(3):hover { box-shadow: 0 20px 60px rgba(59,130,246,0.35); border-color: #3b82f688; }
+  .card:nth-child(4):hover { box-shadow: 0 20px 60px rgba(245,158,11,0.35); border-color: #f59e0b88; }
+
+  .card-icon-wrap {
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  .card:hover .card-icon-wrap { transform: rotate(-8deg) scale(1.15); }
+
+  .card:nth-child(1) .card-icon-wrap { background: rgba(16,185,129,0.2); }
+  .card:nth-child(2) .card-icon-wrap { background: rgba(244,63,94,0.2); }
+  .card:nth-child(3) .card-icon-wrap { background: rgba(59,130,246,0.2); }
+  .card:nth-child(4) .card-icon-wrap { background: rgba(245,158,11,0.2); }
+
+  .card-icon-wrap svg { width: 38px; height: 38px; }
+
+  .card-title {
+    font-family: 'Baloo 2', cursive;
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: #f1f5f9;
+    line-height: 1.2;
+  }
+
+  .card-desc {
+    font-family: 'Caveat', cursive;
+    font-size: 0.98rem;
+    color: #94a3b8;
+    font-weight: 500;
+  }
+
+  .card-arrow {
+    position: absolute;
+    bottom: 14px;
+    right: 18px;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.25s, transform 0.25s;
+  }
+
+  .card:hover .card-arrow { opacity: 1; transform: translateX(0); }
+
+  .card-number {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    font-family: 'Caveat', cursive;
+    font-size: 0.85rem;
+    font-weight: 700;
+    opacity: 0.35;
+    color: #fff;
+  }
+
+  #mascot-wrap {
+    position: fixed;
+    bottom: 24px;
+    right: 28px;
+    z-index: 100;
+    cursor: pointer;
+    animation: mascotBob 2.8s ease-in-out infinite;
+    filter: drop-shadow(0 10px 24px rgba(251,146,60,0.4));
+    transition: filter 0.3s;
+  }
+
+  #mascot-wrap:hover {
+    filter: drop-shadow(0 14px 32px rgba(251,146,60,0.7));
+    animation-play-state: paused;
+  }
+
+  #mascot-wrap:hover #mascot-svg {
+    transform: scale(1.12) rotate(-5deg);
+  }
+
+  #mascot-svg {
+    width: 100px;
+    height: 100px;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    transform-origin: center bottom;
+  }
+
+  @keyframes mascotBob {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    40%       { transform: translateY(-14px) rotate(2deg); }
+    60%       { transform: translateY(-10px) rotate(-1deg); }
+  }
+
+  .speech {
+    position: fixed;
+    bottom: 90px;
+    right: 130px;
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 13px 18px;
+    border-radius: 16px 16px 4px 16px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+    font-family: 'Caveat', cursive;
+    font-size: 1.05rem;
+    font-weight: 600;
+    max-width: 210px;
+    text-align: center;
+    border: 2px solid #fb923c55;
+    animation: bubbleIn 0.7s cubic-bezier(.34,1.56,.64,1) both;
+    z-index: 99;
+    line-height: 1.4;
+  }
+
+  .speech::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    right: 14px;
+    width: 0;
+    height: 0;
+    border-left: 12px solid transparent;
+    border-right: 0px solid transparent;
+    border-top: 12px solid #1e293b;
+  }
+
+  @keyframes bubbleIn {
+    from { opacity: 0; transform: scale(0.7) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Starfield -->
+<canvas id="stars"></canvas>
+
+<!-- Floating sketch shapes -->
+<svg class="floater" style="width:120px;left:5%;animation-duration:18s;animation-delay:0s;" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="40" fill="none" stroke="#f43f5e" stroke-width="6"/>
+</svg>
+<svg class="floater" style="width:80px;left:25%;animation-duration:14s;animation-delay:3s;" viewBox="0 0 100 100">
+  <rect x="10" y="10" width="80" height="80" rx="18" fill="none" stroke="#3b82f6" stroke-width="6"/>
+</svg>
+<svg class="floater" style="width:100px;left:55%;animation-duration:20s;animation-delay:6s;" viewBox="0 0 100 100">
+  <polygon points="50,8 92,76 8,76" fill="none" stroke="#fb923c" stroke-width="6"/>
+</svg>
+<svg class="floater" style="width:70px;left:75%;animation-duration:16s;animation-delay:9s;" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="6"/>
+</svg>
+<svg class="floater" style="width:90px;left:88%;animation-duration:22s;animation-delay:1s;" viewBox="0 0 100 100">
+  <rect x="10" y="10" width="80" height="80" rx="18" fill="none" stroke="#f59e0b" stroke-width="6"/>
+</svg>
+
+<!-- Header -->
+<div class="header">
+  <!-- <div class="header-badge">Language Lab</div> -->
+  <h1>Welcome to <span class="highlight">Modules</span></h1>
+  <p class="subtitle">Pick your adventure and start learning today!</p>
+  <div class="grade-pill" id="gradePill">Grade 1</div>
+</div>
+
+<!-- Module Cards -->
+<div class="container" id="moduleContainer"></div>
+
+<!-- Speech Bubble -->
+<div class="speech" id="speechBox">Hi! Click me to talk!</div>
+
+<!-- Mascot SVG (owl) -->
+<div id="mascot-wrap">
+  <svg id="mascot-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <!-- Body -->
+    <ellipse cx="100" cy="130" rx="52" ry="58" fill="#0f1f2e" stroke="#fb923c" stroke-width="3"/>
+    <!-- Belly -->
+    <ellipse cx="100" cy="140" rx="30" ry="35" fill="#fff7ed"/>
+    <!-- Belly stripes -->
+    <path d="M85 125 Q100 120 115 125" stroke="#fb923c" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M82 135 Q100 129 118 135" stroke="#fb923c" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M83 145 Q100 138 117 145" stroke="#fb923c" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- Head -->
+    <ellipse cx="100" cy="82" rx="46" ry="44" fill="#0f1f2e" stroke="#fb923c" stroke-width="3"/>
+    <!-- Ear tufts -->
+    <polygon points="68,45 60,22 80,38" fill="#0f1f2e" stroke="#fb923c" stroke-width="2.5"/>
+    <polygon points="132,45 140,22 120,38" fill="#0f1f2e" stroke="#fb923c" stroke-width="2.5"/>
+    <!-- Face circle -->
+    <ellipse cx="100" cy="84" rx="34" ry="32" fill="#080d1c" stroke="#fb923c44" stroke-width="1.5"/>
+    <!-- Left eye outer -->
+    <circle cx="85" cy="78" r="14" fill="#fff7ed" stroke="#fb923c" stroke-width="2.5"/>
+    <!-- Right eye outer -->
+    <circle cx="115" cy="78" r="14" fill="#fff7ed" stroke="#fb923c" stroke-width="2.5"/>
+    <!-- Left iris -->
+    <circle cx="85" cy="78" r="9" fill="#f43f5e"/>
+    <!-- Right iris -->
+    <circle cx="115" cy="78" r="9" fill="#3b82f6"/>
+    <!-- Left pupil -->
+    <circle cx="86" cy="77" r="5" fill="#080d1c"/>
+    <!-- Right pupil -->
+    <circle cx="116" cy="77" r="5" fill="#080d1c"/>
+    <!-- Eye shine L -->
+    <circle cx="89" cy="74" r="2" fill="#fff" opacity="0.8"/>
+    <!-- Eye shine R -->
+    <circle cx="119" cy="74" r="2" fill="#fff" opacity="0.8"/>
+    <!-- Beak -->
+    <polygon points="100,90 92,102 108,102" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+    <line x1="92" y1="96" x2="108" y2="96" stroke="#d97706" stroke-width="1.5"/>
+    <!-- Wings -->
+    <path d="M48 110 Q28 125 38 155 Q60 148 72 130Z" fill="#0f1f2e" stroke="#fb923c" stroke-width="2.5"/>
+    <path d="M152 110 Q172 125 162 155 Q140 148 128 130Z" fill="#0f1f2e" stroke="#fb923c" stroke-width="2.5"/>
+    <!-- Feet -->
+    <path d="M80 182 Q72 195 66 190" stroke="#fb923c" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M80 182 Q78 196 72 195" stroke="#fb923c" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M80 182 Q84 197 80 198" stroke="#fb923c" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M120 182 Q128 195 134 190" stroke="#fb923c" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M120 182 Q122 196 128 195" stroke="#fb923c" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M120 182 Q116 197 120 198" stroke="#fb923c" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <!-- Graduation cap -->
+    <rect x="68" y="46" width="64" height="8" rx="3" fill="#fb923c"/>
+    <polygon points="100,30 68,46 132,46" fill="#f59e0b"/>
+    <line x1="132" y1="46" x2="140" y2="60" stroke="#fb923c" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="140" cy="63" r="4" fill="#f43f5e"/>
+  </svg>
+</div>
+
+<script>
+  /* ---- Stars canvas ---- */
+  (function() {
+    const c = document.getElementById('stars');
+    const ctx = c.getContext('2d');
+    let W, H, stars = [];
+    function resize() {
+      W = c.width  = window.innerWidth;
+      H = c.height = window.innerHeight;
+    }
+    function init() {
+      stars = [];
+      for (let i = 0; i < 140; i++) {
+        stars.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: Math.random() * 1.6 + 0.3,
+          a: Math.random(),
+          speed: Math.random() * 0.4 + 0.1
+        });
+      }
+    }
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      stars.forEach(s => {
+        s.a += s.speed * 0.01;
+        const alpha = 0.3 + 0.5 * Math.abs(Math.sin(s.a));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(draw);
+    }
+    window.addEventListener('resize', () => { resize(); init(); });
+    resize(); init(); draw();
+  })();
+
+  /* ---- Grade & Modules ---- */
+  const urlParams = new URLSearchParams(window.location.search);
+  let grade = urlParams.get("grade") || localStorage.getItem("selectedGrade") || "1";
+
+  function formatGradeName(g) {
+    if (g === "jr_kg") return "Jr KG";
+    if (g === "sr_kg") return "Sr KG";
+    return "Grade " + g;
+  }
+
+  document.getElementById("gradePill").textContent = formatGradeName(grade);
+
+  const modules = [
+    {
+      name: "Reading & Speaking",
+      desc: "Read aloud and shine!",
+      link: "readandwrite.html",
+      color: "#10b981",
+      icon: `<svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="5" y="4" width="28" height="30" rx="5" stroke="#10b981" stroke-width="2.5"/>
+        <line x1="11" y1="13" x2="27" y2="13" stroke="#10b981" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="11" y1="19" x2="27" y2="19" stroke="#10b981" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="11" y1="25" x2="20" y2="25" stroke="#10b981" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="29" cy="27" r="7" fill="#080d1c" stroke="#10b981" stroke-width="2"/>
+        <line x1="34" y1="32" x2="31" y2="29" stroke="#10b981" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>`
+    },
+    {
+      name: "Listening & Writing",
+      desc: "Hear it, write it, ace it!",
+      link: "listenandwrite.html",
+      color: "#f43f5e",
+      icon: `<svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 6C13.48 6 9 10.48 9 16v6c0 1.1.9 2 2 2h2v-8h-2v-1c0-4.42 3.58-8 8-8s8 3.58 8 8v1h-2v8h2c1.1 0 2-.9 2-2v-6c0-5.52-4.48-10-10-10z" fill="#f43f5e" opacity="0.7"/>
+        <rect x="15" y="26" width="8" height="6" rx="3" fill="#f43f5e"/>
+        <line x1="19" y1="32" x2="19" y2="36" stroke="#f43f5e" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="14" y1="36" x2="24" y2="36" stroke="#f43f5e" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>`
+    },
+    {
+      name: "Vocabulary & Grammar",
+      desc: "Talk loud and be proud!",
+      link: "VocabandGrammar.html",
+      color: "#3b82f6",
+      icon: `<svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M7 12h18a2 2 0 012 2v10a2 2 0 01-2 2H15l-6 4v-4H7a2 2 0 01-2-2V14a2 2 0 012-2z" stroke="#3b82f6" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+        <line x1="11" y1="18" x2="20" y2="18" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+        <line x1="11" y1="22" x2="17" y2="22" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+        <path d="M29 10 Q36 19 29 28" stroke="#3b82f6" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M32 13 Q37 19 32 25" stroke="#3b82f6" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </svg>`
+    },
+    {
+      name: "Conversation Practice",
+      desc: "Craft your story word by word!",
+      link: "StoryConversation.html",
+      color: "#f59e0b",
+      icon: `<svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 32 L28 12 a4 4 0 015.5 5.5L13.5 33Z" stroke="#f59e0b" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+        <line x1="24" y1="14" x2="30" y2="20" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+        <path d="M8 32 L6 35 L11 33Z" fill="#f59e0b"/>
+        <line x1="4" y1="36" x2="20" y2="36" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+      </svg>`
+    }
+  ];
+
+  const container = document.getElementById("moduleContainer");
+  modules.forEach((mod, i) => {
+    const card = document.createElement("div");
+    card.classList.add("card");
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", mod.name);
+    card.innerHTML = `
+      <span class="card-number">0${i + 1}</span>
+      <div class="card-icon-wrap">${mod.icon}</div>
+      <div class="card-title">${mod.name}</div>
+      <div class="card-desc">${mod.desc}</div>
+      <svg class="card-arrow" width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <path d="M5 11h12M13 7l4 4-4 4" stroke="${mod.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+    card.onclick = () => window.location.href = `${mod.link}?grade=${grade}`;
+    card.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') card.onclick(); };
+    container.appendChild(card);
+  });
+
+  /* ---- Mascot speech ---- */
+ /* ---- Mascot speech ---- */
+const tips = [
+  "Let's learn something amazing today!",
+  "You are a language star!",
+  "Pick a module and let's go!",
+  "Every word you learn is a superpower!",
+  "Reading today makes you brilliant tomorrow!"
+];
+
+let tipIndex = 0;
+
+const mascotWrap = document.getElementById("mascot-wrap");
+const speechBox  = document.getElementById("speechBox");
+
+let voices = [];
+
+// Load voices properly
+function loadVoices() {
+  voices = speechSynthesis.getVoices();
+}
+loadVoices();
+speechSynthesis.onvoiceschanged = loadVoices;
+
+function pickFemaleVoice() {
+  return (
+    voices.find(v =>
+      v.name.toLowerCase().includes("female") ||
+      v.name.toLowerCase().includes("zira") ||        // Windows female voice
+      v.name.toLowerCase().includes("google") ||
+      v.lang === "en-IN" ||
+      v.lang === "en-IN"
+    ) || voices[0]
+  );
+}
+
+mascotWrap.addEventListener("click", () => {
+  tipIndex = (tipIndex + 1) % tips.length;
+  const text = tips[tipIndex];
+  speechBox.textContent = text;
+
+  speechSynthesis.cancel();
+
+  const msg = new SpeechSynthesisUtterance(
+    `Welcome to ${formatGradeName(grade)} modules! ${text}`
+  );
+
+  const femaleVoice = pickFemaleVoice();
+  if (femaleVoice) msg.voice = femaleVoice;
+
+  msg.rate = 1;
+  msg.pitch = 1.5; // higher pitch = more feminine feel
+
+  speechSynthesis.speak(msg);
+
+  speechBox.style.animation = 'none';
+  void speechBox.offsetHeight;
+  speechBox.style.animation = 'bubbleIn 0.5s cubic-bezier(.34,1.56,.64,1) both';
+});
+
+window.addEventListener('beforeunload', () => speechSynthesis.cancel());
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) speechSynthesis.cancel();
+});
+</script>
+</body>
+</html>

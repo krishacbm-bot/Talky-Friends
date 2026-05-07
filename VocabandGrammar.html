@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Vocab & Grammar — TalkyLab</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="Grammardatap1.js"></script>
+<style>
+:root {
+  --bg:#06071a;--border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.15);
+  --text:#eef0ff;--muted:rgba(238,240,255,0.55);--dim:rgba(238,240,255,0.28);
+  --blue:#4f8ef7;--cyan:#43e8d8;--violet:#9b6dff;--green:#2ddc82;--gold:#f5c842;--rose:#ff6b9d;
+  --ease:cubic-bezier(0.34,1.56,0.64,1);--eout:cubic-bezier(0.22,1,0.36,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+#starCanvas{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.blob{position:fixed;border-radius:50%;filter:blur(90px);opacity:0.14;pointer-events:none;z-index:0;animation:blobFloat 16s ease-in-out infinite alternate;}
+.b1{width:480px;height:480px;background:#4f8ef7;top:-100px;left:-80px;}
+.b2{width:380px;height:380px;background:#9b6dff;bottom:-80px;right:-60px;animation-delay:-6s;}
+.b3{width:260px;height:260px;background:#43e8d8;top:40%;left:55%;animation-delay:-11s;}
+@keyframes blobFloat{from{transform:translate(0,0) scale(1)}to{transform:translate(28px,36px) scale(1.07)}}
+.shell{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;}
+.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:62px;background:rgba(6,7,26,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);gap:14px;}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.logo-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--violet),var(--gold));display:flex;align-items:center;justify-content:center;}
+.logo-mark svg{width:18px;height:18px;}
+.logo-name{font-size:1rem;font-weight:800;color:var(--text);}
+.logo-name em{font-style:normal;color:var(--violet);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.nav-pill{display:flex;align-items:center;gap:6px;padding:5px 13px;border-radius:999px;font-size:0.76rem;font-weight:700;border:1px solid;}
+.np-xp{background:rgba(245,200,66,0.08);border-color:rgba(245,200,66,0.25);color:var(--gold);}
+.np-st{background:rgba(255,107,157,0.08);border-color:rgba(255,107,157,0.25);color:var(--rose);}
+.back-link{display:flex;align-items:center;gap:5px;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);font-size:0.78rem;font-weight:600;text-decoration:none;transition:all 0.2s;}
+.back-link:hover{background:rgba(255,255,255,0.09);color:var(--text);}
+.page-head{max-width:1080px;margin:0 auto;width:100%;padding:28px 32px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+.ph-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.2);font-size:0.65rem;font-weight:800;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+.ph-tag .dot{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:blink 2s ease infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.ph-title{font-size:clamp(1.7rem,3vw,2.4rem);font-weight:800;line-height:1.1;letter-spacing:-0.8px;}
+.ph-title .gr{background:linear-gradient(90deg,var(--violet),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.ph-sub{margin-top:8px;font-size:0.86rem;color:var(--muted);max-width:520px;line-height:1.6;}
+.ph-tags{display:flex;gap:7px;margin-top:14px;flex-wrap:wrap;}
+.ph-badge{display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:999px;font-size:0.7rem;font-weight:700;background:rgba(255,255,255,0.04);border:1px solid var(--border);}
+.ph-badge.b-blue{background:rgba(79,142,247,0.08);border-color:rgba(79,142,247,0.2);color:var(--blue);}
+.ph-badge.b-violet{background:rgba(155,109,255,0.08);border-color:rgba(155,109,255,0.2);color:var(--violet);}
+.ph-badge.b-gold{background:rgba(245,200,66,0.08);border-color:rgba(245,200,66,0.2);color:var(--gold);}
+.student-bar{max-width:1080px;margin:0 auto;width:100%;padding:0 32px 22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.stu-label{font-size:0.72rem;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;flex-shrink:0;}
+.stu-input{padding:8px 16px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;font-weight:600;outline:none;transition:border-color 0.2s;width:200px;}
+.stu-input::placeholder{color:var(--dim);}
+.stu-input:focus{border-color:rgba(79,142,247,0.4);}
+.main{max-width:1080px;margin:0 auto;width:100%;padding:0 32px 60px;display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;}
+@media(max-width:860px){.main{grid-template-columns:1fr;padding:0 16px 60px;}.page-head,.student-bar{padding-left:16px;padding-right:16px;}}
+.card{background:rgba(255,255,255,0.032);border:1px solid var(--border);border-radius:20px;overflow:hidden;}
+.card+.card{margin-top:16px;}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.card-title{font-size:0.88rem;font-weight:700;color:var(--text);}
+.card-body{padding:14px 18px;}
+.sel-row{display:flex;gap:8px;flex-wrap:wrap;}
+.sel-chip{padding:7px 16px;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted);font-size:0.78rem;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.sel-chip:hover{border-color:rgba(79,142,247,0.3);color:var(--text);}
+.sel-chip.active{background:rgba(79,142,247,0.1);border-color:var(--blue);color:var(--blue);}
+.done-chip{background:rgba(45,220,130,0.1)!important;border-color:rgba(45,220,130,0.4)!important;color:#2ddc82!important;}
+.q-dots{display:flex;gap:6px;padding:14px 20px 0;}
+.q-dot{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,0.07);transition:all 0.4s var(--ease);}
+.q-dot.done{background:var(--green);}
+.q-dot.active{background:var(--blue);opacity:0.7;}
+.q-label{padding:6px 20px 0;font-size:0.72rem;color:var(--dim);font-weight:700;}
+.question-wrap{padding:18px 20px 12px;}
+.q-topic-tag{font-size:0.62rem;font-weight:800;color:var(--gold);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;}
+.q-text{background:rgba(255,255,255,0.025);border:1px solid var(--border);border-radius:14px;padding:20px 22px;font-size:1.05rem;line-height:1.85;color:var(--text);font-weight:600;min-height:72px;}
+.options-wrap{padding:0 20px 10px;}
+.option{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:10px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all 0.2s;user-select:none;font-size:0.95rem;font-weight:600;color:var(--muted);}
+.option:hover{background:rgba(79,142,247,0.08);border-color:rgba(79,142,247,0.35);color:var(--text);}
+.option input[type=radio]{cursor:pointer;accent-color:var(--blue);width:17px;height:17px;flex-shrink:0;}
+.option.correct{background:rgba(45,220,130,0.1)!important;border-color:var(--green)!important;color:var(--green)!important;}
+.option.incorrect{background:rgba(255,107,157,0.1)!important;border-color:var(--rose)!important;color:var(--rose)!important;}
+.option.disabled{pointer-events:none;}
+.hint-row{padding:2px 20px 6px;display:flex;align-items:center;gap:10px;}
+.btn-hint{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:999px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;border:1px solid rgba(245,200,66,0.3);background:rgba(245,200,66,0.06);color:var(--gold);transition:all 0.2s;}
+.btn-hint:hover{background:rgba(245,200,66,0.14);}
+.btn-hint:disabled{opacity:0.3;cursor:default;}
+.hint-badge{font-size:0.65rem;font-weight:800;padding:2px 9px;border-radius:999px;background:rgba(245,200,66,0.15);color:var(--gold);}
+.hint-box{margin:0 20px 12px;border-radius:12px;padding:13px 16px;background:rgba(245,200,66,0.06);border:1px solid rgba(245,200,66,0.22);display:none;gap:10px;align-items:flex-start;animation:fadeUp 0.3s var(--eout);}
+.hint-box.show{display:flex;}
+.hint-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px;}
+.hint-text{font-size:0.8rem;color:rgba(245,200,66,0.9);line-height:1.6;font-weight:500;}
+.hint-deduct{font-size:0.63rem;color:var(--dim);margin-top:4px;}
+.result-card{margin:0 20px 14px;border-radius:14px;padding:16px 18px;display:none;animation:fadeUp 0.4s var(--eout);}
+.result-card.show{display:block;}
+.result-card.correct{background:rgba(45,220,130,0.07);border:1px solid rgba(45,220,130,0.22);}
+.result-card.incorrect{background:rgba(255,107,157,0.07);border:1px solid rgba(255,107,157,0.22);}
+.result-top{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.result-emoji{font-size:1.9rem;line-height:1;}
+.result-label{font-size:0.95rem;font-weight:800;}
+.result-card.correct .result-label{color:var(--green);}
+.result-card.incorrect .result-label{color:var(--rose);}
+.result-corr{font-size:0.8rem;color:var(--muted);margin-top:3px;}
+.result-exp-box{margin-top:12px;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid var(--border);}
+.result-exp-title{font-size:0.62rem;font-weight:800;color:var(--blue);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.result-exp-text{font-size:0.82rem;color:var(--muted);line-height:1.65;}
+.ctrl-row{padding:0 20px 18px;display:flex;gap:10px;flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 22px;border-radius:999px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.84rem;font-weight:700;cursor:pointer;border:none;transition:all 0.2s var(--ease);}
+.btn:active{transform:scale(0.96);}
+.btn:disabled{opacity:0.35;cursor:default;transform:none!important;}
+.btn-submit{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#06071a;box-shadow:0 6px 22px rgba(79,142,247,0.28);}
+.btn-submit:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 28px rgba(79,142,247,0.38);}
+.btn-next{background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.3);color:var(--blue);}
+.btn-next:hover{background:rgba(79,142,247,0.18);transform:translateY(-2px);}
+.btn-pdf{background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.3);color:var(--gold);}
+.btn-pdf:hover{background:rgba(245,200,66,0.18);transform:translateY(-2px);}
+.side{display:flex;flex-direction:column;gap:16px;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-box{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
+.stat-val{font-size:1.4rem;font-weight:800;line-height:1;}
+.stat-val.blue{color:var(--blue);}.stat-val.green{color:var(--green);}.stat-val.gold{color:var(--gold);}.stat-val.violet{color:var(--violet);}
+.stat-lbl{font-size:0.58rem;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:3px;}
+.sess-list{display:flex;flex-direction:column;margin-top:12px;}
+.sess-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.sess-row:last-child{border-bottom:none;}
+.sess-k{font-size:0.74rem;color:var(--muted);}
+.sess-v{font-size:0.78rem;font-weight:700;color:var(--text);}
+.toast{position:fixed;bottom:22px;right:22px;z-index:999;display:flex;align-items:center;padding:12px 18px;background:rgba(20,22,42,0.96);border:1px solid var(--border2);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.5);font-size:0.84rem;font-weight:600;color:var(--text);transform:translateY(80px);opacity:0;transition:all 0.4s var(--ease);max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.cp{position:fixed;top:-10px;pointer-events:none;z-index:9999;animation:cfFall linear forwards;}
+@keyframes cfFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+footer{border-top:1px solid var(--border);padding:20px 32px;text-align:center;color:var(--dim);font-size:0.75rem;margin-top:auto;}
+.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:900;}
+.popup-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:901;background:#0e1030;border:1px solid rgba(79,142,247,0.4);border-radius:24px;padding:36px 40px;max-width:420px;width:92%;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,0.7);animation:fadeUp 0.4s cubic-bezier(0.22,1,0.36,1);}
+.popup-emoji{font-size:3.2rem;margin-bottom:12px;}
+.popup-title{font-size:1.4rem;font-weight:800;color:#eef0ff;margin-bottom:8px;}
+.popup-score{font-size:0.95rem;color:rgba(238,240,255,0.7);margin-bottom:6px;}
+.popup-score strong{color:#2ddc82;}
+.popup-xp{font-size:0.8rem;color:#f5c842;margin-bottom:14px;font-weight:700;}
+.popup-next-label{font-size:0.82rem;color:rgba(238,240,255,0.55);margin-bottom:18px;}
+.popup-next-label strong{color:#eef0ff;}
+.popup-all-done{font-size:0.9rem;color:#2ddc82;margin-bottom:18px;font-weight:700;}
+.popup-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+</style>
+</head>
+<body>
+<canvas id="starCanvas"></canvas>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+<div class="toast" id="toast"></div>
+<div class="shell">
+
+<nav class="nav">
+  <a href="index.html" class="logo">
+    <div class="logo-mark"><svg viewBox="0 0 20 20" fill="none"><path d="M10 3C6.13 3 3 6.13 3 10a7 7 0 0012.4 4.4l2.1 1.1-.6-2.5A7 7 0 0017 10c0-3.87-3.13-7-7-7z" fill="white"/><path d="M7 9.5h6M7 12h4" stroke="rgba(79,142,247,0.8)" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+    <span class="logo-name">Talky<em>Lab</em></span>
+  </a>
+  <div class="nav-right">
+    <div class="nav-pill np-xp">⭐ <span id="topXP">2,450 XP</span></div>
+    <div class="nav-pill np-st">🔥 <span id="topStreak">12</span></div>
+    <a href="module.html" class="back-link"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L3 6l4.5 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</a>
+  </div>
+</nav>
+
+<div class="page-head">
+  <div>
+    <div class="ph-tag"><span class="dot"></span>MODULE 03</div>
+    <div class="ph-title">Vocab &amp; <span class="gr">Grammar</span></div>
+    <p class="ph-sub">Pick a topic and select the correct answer from 4 choices. Get instant feedback and explanations!</p>
+    <div class="ph-tags">
+      <span class="ph-badge b-blue" id="gradeBadge">Grade —</span>
+      <span class="ph-badge b-violet" id="topicBadge">—</span>
+      <span class="ph-badge b-gold">📖 MCQ Quiz</span>
+    </div>
+  </div>
+  <button class="btn btn-pdf" onclick="downloadPDF()">
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 11h10M7 2v7M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Download Report
+  </button>
+</div>
+
+<div class="student-bar">
+  <span class="stu-label">My Name</span>
+  <input class="stu-input" id="stuName" type="text" placeholder="Type your name here…" maxlength="40"/>
+  <span class="stu-label" style="margin-left:10px;">Roll No.</span>
+  <input class="stu-input" id="stuRoll" type="text" placeholder="Roll no." maxlength="20" style="width:110px;"/>
+</div>
+
+<div class="main">
+<div>
+<div class="card" style="animation:fadeUp 0.5s var(--eout) 0.1s both;">
+
+  <!-- TOPIC SELECTOR ONLY — grade comes from index -->
+  <div class="card-head"><span class="card-title">📚 Choose a Topic</span></div>
+  <div class="card-body"><div class="sel-row" id="topicRow"></div></div>
+
+  <div class="q-dots" id="qDots"></div>
+  <div class="q-label" id="qLabel">Question 1 of 10</div>
+
+  <div class="question-wrap">
+    <div class="q-topic-tag" id="qTopic">TOPIC</div>
+    <div class="q-text" id="qText">Pick a topic above to start the quiz!</div>
+  </div>
+
+  <div class="options-wrap" id="optionsWrap"></div>
+
+  <div class="hint-row">
+    <button class="btn-hint" id="hintBtn" onclick="showHint()">💡 Show Hint</button>
+    <span class="hint-badge" id="hintUsed" style="display:none;">−5 XP</span>
+  </div>
+  <div class="hint-box" id="hintBox">
+    <div class="hint-icon">💡</div>
+    <div><div class="hint-text" id="hintText"></div><div class="hint-deduct">Hint used — 5 XP deducted from this question</div></div>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-top">
+      <div class="result-emoji" id="resultEmoji">✅</div>
+      <div><div class="result-label" id="resultLabel">Correct!</div><div class="result-corr" id="resultCorr"></div></div>
+    </div>
+    <div class="result-exp-box" id="resultExpBox" style="display:none;">
+      <div class="result-exp-title">📖 Why is this the answer?</div>
+      <div class="result-exp-text" id="resultExp"></div>
+    </div>
+  </div>
+
+  <div class="ctrl-row">
+    <button class="btn btn-submit" id="submitBtn" onclick="submitAnswer()">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 7l3 3 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Submit Answer
+    </button>
+    <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()" style="display:none;">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M4 2l5 4.5L4 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Next Question
+    </button>
+  </div>
+
+</div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="side">
+  <div class="card" style="animation:fadeUp 0.5s var(--eout) 0.2s both;">
+    <div class="card-head"><span class="card-title">📊 My Scores</span></div>
+    <div class="card-body" style="padding:14px;">
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-val blue"   id="sDone">0</div><div class="stat-lbl">Answered</div></div>
+        <div class="stat-box"><div class="stat-val green"  id="sAvg">—</div><div class="stat-lbl">Accuracy</div></div>
+        <div class="stat-box"><div class="stat-val gold"   id="sXP">+0</div><div class="stat-lbl">XP Earned</div></div>
+        <div class="stat-box"><div class="stat-val violet" id="sBest">—</div><div class="stat-lbl">Best Score</div></div>
+      </div>
+      <div class="sess-list">
+        <div class="sess-row"><span class="sess-k">⏱ Time</span>    <span class="sess-v" id="sessTime">0:00</span></div>
+        <div class="sess-row"><span class="sess-k">🎓 Grade</span>   <span class="sess-v" id="sessGrade">—</span></div>
+        <div class="sess-row"><span class="sess-k">📚 Topic</span>   <span class="sess-v" id="sessTopic">—</span></div>
+        <div class="sess-row"><span class="sess-k">✅ Score</span>   <span class="sess-v" id="sessScore">0 / 0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="animation:fadeUp 0.5s var(--eout) 0.3s both;border-color:rgba(245,200,66,0.2);">
+    <div class="card-body" style="padding:16px 18px;">
+      <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:5px;">📄 Download My Report</div>
+      <div style="font-size:0.74rem;color:var(--muted);margin-bottom:14px;line-height:1.55;">PDF with your score, correct answers, and explanations.</div>
+      <div style="display:flex;flex-direction:column;gap:5px;font-size:0.72rem;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--dim);">Name</span><span style="font-weight:700;" id="rpName">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--dim);">Grade</span><span style="font-weight:700;" id="rpGrade">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:var(--dim);">Score</span><span style="font-weight:700;color:var(--green);" id="rpAcc">—</span></div>
+      </div>
+      <button class="btn btn-pdf" style="width:100%;justify-content:center;" onclick="downloadPDF()">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 11h10M7 2v7M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Download PDF Report
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+<footer>TalkyLab Language Lab — Grammar MCQ Quiz — All Grades</footer>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   STARS
+══════════════════════════════════════ */
+(function(){
+  const c=document.getElementById('starCanvas'),ctx=c.getContext('2d');let s=[];
+  function resize(){c.width=innerWidth;c.height=innerHeight;}
+  function make(){s=[];for(let i=0;i<120;i++)s.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.3+0.2,a:Math.random(),sp:Math.random()*0.007+0.002,d:Math.random()>.5?1:-1});}
+  function draw(){ctx.clearRect(0,0,c.width,c.height);s.forEach(p=>{p.a+=p.sp*p.d;if(p.a>=1||p.a<=0)p.d*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(200,210,255,${p.a})`;ctx.fill();});requestAnimationFrame(draw);}
+  window.addEventListener('resize',()=>{resize();make();});resize();make();draw();
+})();
+
+/* ══════════════════════════════════════
+   CONSTANTS
+══════════════════════════════════════ */
+const GRADE_LABELS = {
+  jr_kg:'Jr KG', sr_kg:'Sr KG',
+  '1':'Grade 1','2':'Grade 2','3':'Grade 3','4':'Grade 4','5':'Grade 5',
+  '6':'Grade 6','7':'Grade 7','8':'Grade 8','9':'Grade 9','10':'Grade 10',
+  '11':'Grade 11','12':'Grade 12'
+};
+const TOPICS       = ['tenses','articles','pronouns','subjectVerb','vocabulary','modalVerbs'];
+const TOPIC_LABELS = {tenses:'Tenses',articles:'Articles',pronouns:'Pronouns',subjectVerb:'Subject-Verb',vocabulary:'Vocabulary',modalVerbs:'Modal Verbs'};
+
+/* ══════════════════════════════════════
+   RESOLVE GRADE — URL param → localStorage → default
+   Link from index like: vocab-grammar.html?grade=3
+══════════════════════════════════════ */
+const _urlGrade  = new URLSearchParams(location.search).get('grade');
+const grade      = (_urlGrade && typeof GRAMMAR_DATA !== 'undefined' && GRAMMAR_DATA[_urlGrade])
+                   ? _urlGrade
+                   : (localStorage.getItem('selectedGrade') || 'jr_kg');
+localStorage.setItem('selectedGrade', grade);
+const gradeLabel = GRADE_LABELS[grade] || ('Grade ' + grade);
+
+/* ══════════════════════════════════════
+   STATE
+══════════════════════════════════════ */
+let topic         = TOPICS[0];
+let qIdx          = 0;
+let topicCorrect  = 0, topicDone = 0, topicLog = [];
+let totalCorrect  = 0, totalDone = 0, sessXP = 0, best = 0;
+let topicHistory  = [], allHistory = [];
+let sessionStart  = Date.now();
+let hintUsedThisQ = false;
+
+/* ══════════════════════════════════════
+   STAMP GRADE INTO UI  (no selector needed)
+══════════════════════════════════════ */
+function stampGrade(){
+  document.getElementById('gradeBadge').textContent = gradeLabel;
+  document.getElementById('sessGrade').textContent  = gradeLabel;
+  document.getElementById('rpGrade').textContent    = gradeLabel;
+}
+
+/* ══════════════════════════════════════
+   TOPIC ROW
+══════════════════════════════════════ */
+function buildTopicRow(){
+  const row = document.getElementById('topicRow');
+  row.innerHTML = '';
+  TOPICS.forEach(t => {
+    const done = topicHistory.find(h => h.topic === t);
+    const b    = document.createElement('button');
+    b.className = 'sel-chip' + (t === topic ? ' active' : '') + (done ? ' done-chip' : '');
+    b.dataset.t  = t;
+    b.textContent = TOPIC_LABELS[t] + (done ? ' ✓' : '');
+    b.onclick = () => setTopic(t);
+    row.appendChild(b);
+  });
+}
+
+function setTopic(t){
+  if(topicDone > 0) saveCurrentTopic();
+  topic = t;
+  document.querySelectorAll('[data-t]').forEach(b => b.classList.toggle('active', b.dataset.t === t));
+  document.getElementById('topicBadge').textContent = TOPIC_LABELS[t];
+  document.getElementById('sessTopic').textContent  = TOPIC_LABELS[t];
+  resetTopicCounters();
+  loadQuestion();
+}
+
+/* ══════════════════════════════════════
+   HELPERS
+══════════════════════════════════════ */
+function resetTopicCounters(){ qIdx = 0; topicCorrect = 0; topicDone = 0; topicLog = []; updateStats(); }
+
+function saveCurrentTopic(){
+  const idx   = topicHistory.findIndex(h => h.topic === topic);
+  const entry = {topic, topicLabel:TOPIC_LABELS[topic], correct:topicCorrect, total:topicDone, questions:[...topicLog]};
+  if(idx >= 0) topicHistory[idx] = entry; else topicHistory.push(entry);
+}
+
+function getQuestion(){
+  if(typeof GRAMMAR_DATA === 'undefined' || !GRAMMAR_DATA[grade] || !GRAMMAR_DATA[grade][topic]) return null;
+  const qs = GRAMMAR_DATA[grade][topic]['mcq'];
+  if(!qs || !qs.length) return null;
+  return qs[qIdx % qs.length];
+}
+
+/* ══════════════════════════════════════
+   LOAD QUESTION
+══════════════════════════════════════ */
+function loadQuestion(){
+  const q = getQuestion();
+  document.getElementById('resultCard').className    = 'result-card';
+  document.getElementById('resultExpBox').style.display = 'none';
+  document.getElementById('nextBtn').style.display   = 'none';
+  document.getElementById('submitBtn').style.display = 'inline-flex';
+  document.getElementById('submitBtn').disabled      = false;
+  hintUsedThisQ = false;
+  document.getElementById('hintBox').className       = 'hint-box';
+  document.getElementById('hintBtn').disabled        = false;
+  document.getElementById('hintBtn').textContent     = '💡 Show Hint';
+  document.getElementById('hintUsed').style.display  = 'none';
+
+  if(!q){
+    document.getElementById('qText').textContent = 'No questions available for this grade and topic yet.';
+    document.getElementById('optionsWrap').innerHTML = '';
+    document.getElementById('submitBtn').disabled = true;
+    return;
+  }
+
+  document.getElementById('qTopic').textContent = TOPIC_LABELS[topic].toUpperCase();
+  document.getElementById('qText').textContent  = q.q || '';
+  document.getElementById('optionsWrap').innerHTML = (q.opts||[]).map((o,i) =>
+    `<label class="option" id="opt_${i}"><input type="radio" name="mcqAns" value="${i}"/><span>${o}</span></label>`
+  ).join('');
+  renderDots();
+}
+
+function renderDots(){
+  document.getElementById('qDots').innerHTML =
+    Array.from({length:10},(_,i) =>
+      `<div class="q-dot${i < qIdx ? ' done' : i === qIdx ? ' active' : ''}"></div>`).join('');
+  document.getElementById('qLabel').textContent = `Question ${qIdx+1} of 10`;
+}
+
+/* ══════════════════════════════════════
+   HINT
+══════════════════════════════════════ */
+function showHint(){
+  const q = getQuestion(); if(!q) return;
+  hintUsedThisQ = true;
+  document.getElementById('hintText').textContent     = q.exp || 'Think carefully about the grammar rule.';
+  document.getElementById('hintBox').className        = 'hint-box show';
+  document.getElementById('hintBtn').disabled         = true;
+  document.getElementById('hintBtn').textContent      = '💡 Hint shown';
+  document.getElementById('hintUsed').style.display   = 'inline';
+}
+window.showHint = showHint;
+
+/* ══════════════════════════════════════
+   SUBMIT
+══════════════════════════════════════ */
+function submitAnswer(){
+  const q   = getQuestion(); if(!q){ showToast('No question loaded.'); return; }
+  const sel = document.querySelector('input[name="mcqAns"]:checked');
+  if(!sel){ showToast('Please click an answer first! 👆'); return; }
+
+  const chosen = parseInt(sel.value);
+  const ok     = chosen === q.ans;
+
+  document.querySelectorAll('.option').forEach((el,i) => {
+    el.classList.add('disabled');
+    if(i === q.ans)          el.classList.add('correct');
+    if(i === chosen && !ok)  el.classList.add('incorrect');
+  });
+
+  topicDone++; totalDone++;
+  if(ok){
+    topicCorrect++; totalCorrect++;
+    sessXP += hintUsedThisQ ? 15 : 20;
+    const acc = Math.round(totalCorrect * 100 / totalDone);
+    if(acc > best) best = acc;
+  }
+
+  const logEntry = {ok, chosen, correctIdx:q.ans, hintUsed:hintUsedThisQ, topic, topicLabel:TOPIC_LABELS[topic], question:q};
+  topicLog.push(logEntry); allHistory.push(logEntry);
+
+  const rc = document.getElementById('resultCard');
+  rc.className = 'result-card show ' + (ok ? 'correct' : 'incorrect');
+  document.getElementById('resultEmoji').textContent = ok ? '✅' : '❌';
+  document.getElementById('resultLabel').textContent = ok ? 'Correct! Well done! 🎉' : 'Not quite — see explanation below.';
+  document.getElementById('resultCorr').textContent  = ok ? '' : 'Correct answer: ' + q.opts[q.ans];
+
+  if(q.exp){
+    document.getElementById('resultExpBox').style.display = 'block';
+    document.getElementById('resultExp').textContent      = q.exp;
+  }
+
+  document.getElementById('submitBtn').style.display = 'none';
+  document.getElementById('nextBtn').style.display   = 'inline-flex';
+  document.getElementById('hintBtn').disabled        = true;
+  updateStats();
+  if(ok) confetti();
+}
+window.submitAnswer = submitAnswer;
+
+/* ══════════════════════════════════════
+   NEXT / TOPIC COMPLETE
+══════════════════════════════════════ */
+function nextQuestion(){
+  qIdx++;
+  if(qIdx >= 10){
+    saveCurrentTopic();
+    buildTopicRow();
+    const nextTopic = getNextTopic();
+    showTopicCompletePopup(nextTopic);
+    return;
+  }
+  loadQuestion();
+}
+window.nextQuestion = nextQuestion;
+
+function getNextTopic(){
+  const idx = TOPICS.indexOf(topic);
+  return idx < TOPICS.length - 1 ? TOPICS[idx + 1] : null;
+}
+
+function showTopicCompletePopup(nextTopic){
+  const pct   = Math.round(topicCorrect * 100 / 10);
+  const emoji = pct >= 80 ? '🏆' : pct >= 60 ? '👍' : '💪';
+  const popup = document.createElement('div');
+  popup.id    = 'topicPopup';
+  popup.innerHTML = `
+    <div class="popup-overlay" onclick="closePopupStay()"></div>
+    <div class="popup-box">
+      <div class="popup-emoji">${emoji}</div>
+      <div class="popup-title">${TOPIC_LABELS[topic]} Complete!</div>
+      <div class="popup-score">You got <strong>${topicCorrect} out of 10</strong> (${pct}%)</div>
+      <div class="popup-xp">+${topicCorrect * (hintUsedThisQ ? 15 : 20)} XP earned</div>
+      ${nextTopic
+        ? `<div class="popup-next-label">Next: <strong>${TOPIC_LABELS[nextTopic]}</strong></div>
+           <div class="popup-btns">
+             <button class="btn btn-submit" onclick="proceedToNextTopic('${nextTopic}')">Go to ${TOPIC_LABELS[nextTopic]} →</button>
+             <button class="btn btn-pdf" onclick="closePopupStay()">Stay here</button>
+           </div>`
+        : `<div class="popup-all-done">All topics complete! Download your report.</div>
+           <div class="popup-btns">
+             <button class="btn btn-submit" onclick="downloadPDF();closePopupStay();">Download Report</button>
+             <button class="btn btn-pdf" onclick="closePopupStay()">Close</button>
+           </div>`
+      }
+    </div>`;
+  document.body.appendChild(popup);
+  confetti();
+  if(nextTopic){
+    popup._timer = setTimeout(() => proceedToNextTopic(nextTopic), 4000);
+    let t = 4;
+    const lbl = popup.querySelector('.popup-next-label');
+    popup._cd = setInterval(() => { t--; if(lbl) lbl.textContent = `Next: ${TOPIC_LABELS[nextTopic]} (auto in ${t}s)`; }, 1000);
+  }
+}
+
+function proceedToNextTopic(t){ closePopupStay(); setTopic(t); }
+window.proceedToNextTopic = proceedToNextTopic;
+
+function closePopupStay(){
+  const p = document.getElementById('topicPopup');
+  if(p){ clearTimeout(p._timer); clearInterval(p._cd); p.remove(); }
+  resetTopicCounters(); loadQuestion();
+}
+window.closePopupStay = closePopupStay;
+
+/* ══════════════════════════════════════
+   STATS / TIMER / TOAST
+══════════════════════════════════════ */
+function updateStats(){
+  const avg = totalDone > 0 ? Math.round(totalCorrect * 100 / totalDone) + '%' : '—';
+  document.getElementById('sDone').textContent     = totalDone;
+  document.getElementById('sAvg').textContent      = avg;
+  document.getElementById('sXP').textContent       = '+' + sessXP;
+  document.getElementById('sBest').textContent     = best > 0 ? best + '%' : '—';
+  document.getElementById('sessScore').textContent = totalCorrect + ' / ' + totalDone;
+  document.getElementById('rpAcc').textContent     = avg;
+  document.getElementById('topXP').textContent     = (2450 + sessXP).toLocaleString() + ' XP';
+}
+
+function updateTimer(){
+  const e = Math.floor((Date.now() - sessionStart) / 1000);
+  document.getElementById('sessTime').textContent = Math.floor(e/60) + ':' + String(e%60).padStart(2,'0');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3600);
+}
+
+document.getElementById('stuName').addEventListener('input', () => {
+  document.getElementById('rpName').textContent = document.getElementById('stuName').value || '—';
+});
+
+/* ══════════════════════════════════════
+   CONFETTI
+══════════════════════════════════════ */
+function confetti(){
+  const cols=['#4f8ef7','#9b6dff','#f5c842','#ff6b9d','#2ddc82','#43e8d8'];
+  for(let i=0;i<55;i++){
+    const el=document.createElement('div'); el.className='cp';
+    el.style.cssText=`left:${Math.random()*100}vw;top:-10px;width:${5+Math.random()*7}px;height:${5+Math.random()*7}px;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'2px'};animation-duration:${1.4+Math.random()*1.8}s;animation-delay:${Math.random()*.7}s;`;
+    document.body.appendChild(el); setTimeout(()=>el.remove(),4000);
+  }
+}
+
+/* ══════════════════════════════════════
+   PDF
+══════════════════════════════════════ */
+function downloadPDF(){
+  const{jsPDF}=window.jspdf;
+  if(!jsPDF){showToast('PDF loading, try again.');return;}
+  if(topicDone>0)saveCurrentTopic();
+
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210,M=18;
+  const name=document.getElementById('stuName').value||'—';
+  const roll=document.getElementById('stuRoll').value||'—';
+  const date=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const elapsed=Math.floor((Date.now()-sessionStart)/1000);
+  const dur=Math.floor(elapsed/60)+'m '+String(elapsed%60).padStart(2,'0')+'s';
+  const avg=totalDone>0?Math.round(totalCorrect*100/totalDone):0;
+  const topicsDone=topicHistory.length;
+
+  let y=0;
+  function txt(s,x,yy,opts){doc.text(String(s),x,yy,opts||{});}
+  function rect(x,yy,w,h,r,fill){doc.setFillColor(...fill);if(r>0)doc.roundedRect(x,yy,w,h,r,r,'F');else doc.rect(x,yy,w,h,'F');}
+  function ln(x1,y1,x2,y2,r,g,b,lw){doc.setDrawColor(r,g,b);doc.setLineWidth(lw||0.3);doc.line(x1,y1,x2,y2);}
+  function safe(s){return(s||'').replace(/[^\x20-\x7E]/g,'');}
+
+  rect(0,0,W,26,0,[240,245,255]);
+  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(155,109,255);txt('TalkyLab',M,12);
+  doc.setFontSize(8);doc.setTextColor(100,110,160);txt('Vocab & Grammar — Session Report',M+35,12);
+  doc.setFontSize(8);doc.setTextColor(120,130,180);txt(date,W-M,12,{align:'right'});
+  doc.setFontSize(7);doc.setTextColor(140,150,190);txt('Module 03 · Grammar MCQ Quiz · '+gradeLabel,M,20);
+  y=32;
+
+  rect(M,y,W-2*M,22,3,[245,248,255]);
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(155,109,255);txt('Student Information',M+5,y+7);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(100,110,160);
+  txt('Name: ',M+5,y+14);doc.setFont('helvetica','bold');doc.setTextColor(40,50,100);txt(name,M+20,y+14);
+  doc.setFont('helvetica','normal');doc.setTextColor(100,110,160);txt('Roll No: ',M+75,y+14);doc.setFont('helvetica','bold');doc.setTextColor(40,50,100);txt(roll,M+95,y+14);
+  doc.setFont('helvetica','normal');doc.setTextColor(100,110,160);txt('Date: ',W-M-60,y+14);doc.setFont('helvetica','bold');doc.setTextColor(40,50,100);txt(date,W-M-46,y+14);
+  y+=28;
+
+  const cardW=(W-2*M-9)/4;
+  [{label:'Total Score',val:avg>0?avg+'%':'—',col:[155,109,255]},{label:'Correct',val:String(totalCorrect),col:[45,220,130]},
+   {label:'Topics Done',val:String(topicsDone)+' / '+TOPICS.length,col:[79,142,247]},{label:'XP Earned',val:'+'+sessXP,col:[245,200,66]}
+  ].forEach((s,i)=>{
+    const bx=M+i*(cardW+3);rect(bx,y,cardW,20,3,[245,248,255]);
+    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(s.col[0],s.col[1],s.col[2]);txt(s.val,bx+cardW/2,y+11,{align:'center'});
+    doc.setFont('helvetica','bold');doc.setFontSize(5.5);doc.setTextColor(100,110,160);txt(s.label.toUpperCase(),bx+cardW/2,y+17,{align:'center'});
+  });
+  y+=26;
+
+  const rmk=avg>=80?'Excellent performance! Keep it up.':avg>=60?'Good effort. Practice more to improve.':totalDone>0?'Needs more practice. Review the explanations and try again.':'No questions attempted yet.';
+  const rc=avg>=80?[45,220,130]:avg>=60?[245,200,66]:[255,107,157];
+  rect(M,y,W-2*M,12,3,[245,248,255]);
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(rc[0],rc[1],rc[2]);txt('Overall Remark: '+rmk,M+5,y+8);
+  y+=18;
+
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(155,109,255);
+  txt('TOPIC-WISE ACCURACY BREAKDOWN',M,y);
+  ln(M+doc.getTextWidth('TOPIC-WISE ACCURACY BREAKDOWN')+3,y-.5,W-M,y-.5,155,109,255,.5);
+  y+=5;
+  rect(M,y,W-2*M,8,0,[230,228,255]);
+  doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor(155,109,255);
+  txt('#',M+3,y+5.5);txt('Topic',M+10,y+5.5);txt('Correct',M+95,y+5.5);txt('Accuracy',W-M-5,y+5.5,{align:'right'});
+  y+=8;
+
+  if(!topicHistory.length){
+    rect(M,y,W-2*M,10,0,[248,250,255]);
+    doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(140,150,190);
+    txt('No topics attempted yet.',M+5,y+7);y+=14;
+  } else {
+    topicHistory.forEach((th,i)=>{
+      if(y>265){doc.addPage();y=18;}
+      rect(M,y,W-2*M,11,0,i%2===0?[250,252,255]:[245,248,255]);
+      const pct=th.total>0?Math.round(th.correct*100/th.total):0;
+      const col=pct>=80?[45,220,130]:pct>=55?[245,200,66]:[255,107,157];
+      doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(100,110,160);txt(String(i+1),M+3,y+7.5);
+      doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor(60,70,120);txt(th.topicLabel,M+10,y+7.5);txt(th.correct+' / '+th.total,M+95,y+7.5);
+      const bx=W-M-40;doc.setFillColor(220,230,250);doc.roundedRect(bx,y+3,28,5,2,2,'F');
+      doc.setFillColor(col[0],col[1],col[2]);doc.roundedRect(bx,y+3,28*pct/100,5,2,2,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(col[0],col[1],col[2]);txt(pct+'%',W-M-3,y+7.5,{align:'right'});
+      y+=11;
+    });
+    TOPICS.slice(topicHistory.length).forEach((t,i)=>{
+      if(y>265){doc.addPage();y=18;}
+      rect(M,y,W-2*M,11,0,(topicHistory.length+i)%2===0?[250,252,255]:[245,248,255]);
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(140,150,190);
+      txt(String(topicHistory.length+i+1),M+3,y+7.5);txt(TOPIC_LABELS[t],M+10,y+7.5);txt('Not attempted',W-M-5,y+7.5,{align:'right'});y+=11;
+    });
+  }
+  y+=6;
+
+  if(topicHistory.length>0){
+    if(y>230){doc.addPage();y=18;}
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(155,109,255);
+    txt('PER-QUESTION DETAIL',M,y);ln(M+doc.getTextWidth('PER-QUESTION DETAIL')+3,y-.5,W-M,y-.5,155,109,255,.5);y+=6;
+    topicHistory.forEach(th=>{
+      if(y>240){doc.addPage();y=18;}
+      rect(M,y,W-2*M,8,0,[235,232,255]);
+      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(155,109,255);
+      txt(th.topicLabel.toUpperCase()+' — '+th.correct+'/'+th.total+' correct',M+4,y+5.5);y+=10;
+      th.questions.forEach((h,qi)=>{
+        if(y>255){doc.addPage();y=18;}
+        rect(M,y,W-2*M,20,0,qi%2===0?[250,252,255]:[245,248,255]);
+        const col=h.ok?[45,220,130]:[255,107,157];
+        doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor(col[0],col[1],col[2]);
+        txt('Q'+(qi+1)+'  '+(h.ok?'CORRECT':'WRONG')+(h.hintUsed?' (hint)':''),M+3,y+5);
+        doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(60,70,120);
+        txt(doc.splitTextToSize(safe(h.question.q||''),W-2*M-10),M+3,y+10);
+        if(!h.ok){doc.setTextColor(180,60,80);txt('Correct: '+safe(h.question.opts[h.correctIdx]||''),M+3,y+16);}
+        y+=22;
+      });y+=4;
+    });
+  }
+
+  if(y>230){doc.addPage();y=18;}
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(155,109,255);
+  txt('SESSION DETAILS',M,y);ln(M+doc.getTextWidth('SESSION DETAILS')+3,y-.5,W-M,y-.5,155,109,255,.5);y+=6;
+  const hw=(W-2*M-4)/2;
+  [['Grade',gradeLabel],['Topics Completed',topicsDone+' / '+TOPICS.length],['Total Questions',String(totalDone)],
+   ['Correct Answers',String(totalCorrect)],['Session Duration',dur],['XP Earned','+'+sessXP+' XP']
+  ].forEach((d,i)=>{
+    if(y>268){doc.addPage();y=18;}
+    const cx=i%2===0?M:M+hw+4;
+    if(i%2===0){rect(cx,y,hw,9,0,[250,252,255]);rect(cx+hw+4,y,hw,9,0,[245,248,255]);}
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(100,110,160);txt(d[0],cx+3,y+6.5);
+    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(40,50,100);txt(d[1],cx+hw-3,y+6.5,{align:'right'});
+    if(i%2===1)y+=10;
+  });
+  y+=16;
+
+  if(y>240){doc.addPage();y=18;}
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(155,109,255);
+  txt('REMARKS & SUGGESTIONS',M,y);ln(M+doc.getTextWidth('REMARKS & SUGGESTIONS')+3,y-.5,W-M,y-.5,155,109,255,.5);y+=6;
+  ['Read each question carefully before choosing an answer.',
+   'Aim for 80%+ in each topic before moving to the next one.',
+   'Review the grammar explanation shown after each wrong answer.',
+   'Complete all 6 topics every session to maximise learning and XP earned.'
+  ].forEach((tip,i)=>{
+    if(y>270){doc.addPage();y=18;}
+    rect(M,y,W-2*M,9,0,i%2===0?[250,252,255]:[245,248,255]);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(60,70,120);
+    txt('• '+tip,M+4,y+6.5,{maxWidth:W-2*M-8});y+=9;
+  });
+  y+=4;
+
+  if(y<258){
+    ln(M,y+14,M+50,y+14,120,130,180,.4);ln(W-M-50,y+14,W-M,y+14,120,130,180,.4);
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(120,130,180);
+    txt("Teacher's Signature",M,y+18);txt("Student's Signature",W-M,y+18,{align:'right'});
+  }
+
+  rect(0,284,W,13,0,[240,245,255]);
+  doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(100,110,160);
+  txt('TalkyLab Language Lab — AI-Powered Educational Platform — Module 03: Vocab & Grammar',M,291);
+  txt('Generated: '+new Date().toLocaleString(),W-M,291,{align:'right'});
+
+  doc.save('TalkyLab-M03-'+(document.getElementById('stuName').value.replace(/\s+/g,'-')||'Student')+'-'+gradeLabel+'-'+new Date().toISOString().slice(0,10)+'.pdf');
+  showToast('PDF report downloaded!');
+}
+window.downloadPDF = downloadPDF;
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+function init(){
+  stampGrade();
+  buildTopicRow();
+  document.getElementById('topicBadge').textContent = TOPIC_LABELS[topic];
+  document.getElementById('sessTopic').textContent  = TOPIC_LABELS[topic];
+  setInterval(updateTimer, 1000);
+  loadQuestion();
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

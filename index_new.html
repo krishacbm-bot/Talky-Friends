@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TalkyLab — Language Learning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:        #f5f0ff;
+  --white:     #ffffff;
+  --ink:       #1a1d2e;
+  --ink2:      #4a4f6a;
+  --ink3:      #9399b8;
+  --border:    #e4e7f5;
+  --blue:      #4361ee;
+  --blue-lt:   #eef1fd;
+  --blue-dk:   #2f48c5;
+  --purple:    #7b2ff7;
+  --purple-lt: #f0e8fe;
+  --green:     #06c270;
+  --green-lt:  #e6faf2;
+  --orange:    #ff8811;
+  --orange-lt: #fff3e6;
+  --rose:      #f43f75;
+  --rose-lt:   #fee8ef;
+  --gold:      #f5a623;
+  --gold-lt:   #fef6e4;
+  --r-sm: 8px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px; --r-pill: 999px;
+  --shadow-sm: 0 2px 8px rgba(67,97,238,0.07);
+  --shadow-md: 0 6px 24px rgba(67,97,238,0.12);
+  --shadow-lg: 0 16px 48px rgba(67,97,238,0.15);
+  --ease: cubic-bezier(0.34,1.56,0.64,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;background:rgba(247,248,252,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 32px;height:62px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:38px;height:38px;border-radius:12px;background:var(--blue);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(67,97,238,0.35)}
+.logo-mark svg{width:20px;height:20px}
+.logo-text{font-family:'Nunito',sans-serif;font-weight:800;font-size:1.15rem;color:var(--ink);letter-spacing:-0.3px}
+.logo-text span{color:var(--blue)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.pill-badge{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r-pill);font-size:0.8rem;font-weight:700;background:var(--white);border:1.5px solid var(--border);color:var(--ink2);transition:transform 0.2s}
+.pill-badge.xp{border-color:#fde68a;background:#fffbeb;color:#92400e}
+.pill-badge.streak{border-color:#fecdd3;background:#fff1f2;color:#be123c}
+.avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.82rem;color:white;cursor:pointer;border:2px solid white;box-shadow:var(--shadow-sm);transition:transform 0.2s,box-shadow 0.2s}
+.avatar:hover{transform:scale(1.08);box-shadow:var(--shadow-md)}
+
+/* HERO */
+.hero{max-width:1180px;margin:0 auto;padding:56px 32px 44px;display:grid;grid-template-columns:1fr auto;gap:40px;align-items:center}
+.hero-badge{display:inline-flex;align-items:center;gap:7px;padding:5px 14px;border-radius:var(--r-pill);background:var(--blue-lt);border:1.5px solid rgba(67,97,238,0.2);font-size:0.75rem;font-weight:700;color:var(--blue);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:18px;animation:fadeUp 0.6s var(--ease) both}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--blue);animation:blink 2s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.hero h1{font-family:'Nunito',sans-serif;font-size:clamp(2rem,4vw,3.2rem);font-weight:900;line-height:1.1;letter-spacing:-1px;animation:fadeUp 0.7s var(--ease) 0.08s both}
+.hero h1 .accent{color:var(--blue)}
+.hero-sub{margin-top:14px;font-size:1rem;color:var(--ink2);line-height:1.65;max-width:500px;animation:fadeUp 0.7s var(--ease) 0.15s both}
+.hero-actions{display:flex;gap:10px;margin-top:28px;flex-wrap:wrap;animation:fadeUp 0.7s var(--ease) 0.22s both}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:var(--r-pill);font-family:'DM Sans',sans-serif;font-weight:600;font-size:0.9rem;cursor:pointer;border:none;transition:transform 0.2s var(--ease),box-shadow 0.2s}
+.btn-primary{background:var(--blue);color:white;box-shadow:0 6px 20px rgba(67,97,238,0.3)}
+.btn-primary:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 10px 30px rgba(67,97,238,0.4)}
+.btn-primary:active{transform:scale(0.97)}
+.btn-outline{background:var(--white);color:var(--ink);border:1.5px solid var(--border);box-shadow:var(--shadow-sm)}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue);transform:translateY(-2px)}
+.stat-cards{display:flex;flex-direction:column;gap:12px;animation:fadeRight 0.7s var(--ease) 0.3s both}
+.stat-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:16px 22px;min-width:170px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:transform 0.2s var(--ease),box-shadow 0.2s}
+.stat-card:hover{transform:translateX(-4px);box-shadow:var(--shadow-md)}
+.stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3.5px;border-radius:3px 0 0 3px}
+.stat-c1::before{background:var(--blue)} .stat-c2::before{background:var(--purple)}
+.stat-c3::before{background:var(--green)} .stat-c4::before{background:var(--orange)}
+.stat-label{font-size:0.68rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:5px}
+.stat-value{font-family:'Nunito',sans-serif;font-size:1.55rem;font-weight:900;line-height:1}
+.stat-c1 .stat-value{color:var(--blue)} .stat-c2 .stat-value{color:var(--purple)}
+.stat-c3 .stat-value{color:var(--green)} .stat-c4 .stat-value{color:var(--orange)}
+
+/* STEPPER */
+.stepper-wrap{max-width:1180px;margin:0 auto 36px;padding:0 32px}
+.stepper{display:flex;align-items:center;gap:0;background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-pill);padding:6px 8px;box-shadow:var(--shadow-sm)}
+.step{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:var(--r-pill);font-size:0.82rem;font-weight:600;color:var(--ink3);flex:1;transition:all 0.3s;white-space:nowrap}
+.step-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;background:var(--bg);border:1.5px solid var(--border);flex-shrink:0;font-family:'Nunito',sans-serif;transition:all 0.3s}
+.step.active{color:var(--blue)}
+.step.active .step-num{background:var(--blue);border-color:var(--blue);color:white;animation:pop 0.4s var(--ease)}
+.step.done{color:var(--green)}
+.step.done .step-num{background:var(--green);border-color:var(--green);color:white}
+.step-arrow{color:var(--border);font-size:1rem;padding:0 4px}
+@keyframes pop{0%{transform:scale(0.6)}100%{transform:scale(1)}}
+
+/* SECTION */
+.section{max-width:1180px;margin:0 auto;padding:0 32px 52px}
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:12px;flex-wrap:wrap}
+.sec-title{font-family:'Nunito',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ink);letter-spacing:-0.3px}
+.sec-title span{color:var(--blue)}
+.sec-link{font-size:0.8rem;font-weight:600;color:var(--blue);text-decoration:none;opacity:0.8;transition:opacity 0.2s}
+.sec-link:hover{opacity:1}
+
+/* GRADE */
+.grade-groups{display:flex;flex-direction:column;gap:20px}
+.group-label{font-size:0.7rem;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
+.grade-row{display:flex;gap:8px;flex-wrap:wrap}
+.grade-chip{padding:9px 20px;border-radius:var(--r-pill);background:var(--white);border:1.5px solid var(--border);color:var(--ink2);font-family:'Nunito',sans-serif;font-weight:700;font-size:0.88rem;cursor:pointer;transition:all 0.2s var(--ease);box-shadow:var(--shadow-sm);position:relative}
+.grade-chip:hover{border-color:var(--blue);color:var(--blue);transform:translateY(-3px);box-shadow:var(--shadow-md)}
+.grade-chip.selected{background:var(--blue-lt);border-color:var(--blue);color:var(--blue);transform:translateY(-3px);box-shadow:0 6px 20px rgba(67,97,238,0.15)}
+.grade-chip.selected::after{content:'✓';position:absolute;top:-5px;right:-5px;width:16px;height:16px;border-radius:50%;background:var(--blue);color:white;font-size:0.5rem;display:flex;align-items:center;justify-content:center;font-weight:800;line-height:16px;text-align:center}
+
+/* MODULES */
+.module-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:18px}
+.module-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:26px;cursor:pointer;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:14px;transition:transform 0.25s var(--ease),box-shadow 0.25s,border-color 0.2s;box-shadow:var(--shadow-sm);animation:cardIn 0.5s var(--ease) both}
+.module-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r-xl) var(--r-xl) 0 0;opacity:0;transition:opacity 0.3s}
+.module-card:hover{transform:translateY(-6px) scale(1.01);box-shadow:var(--shadow-lg)}
+.module-card:hover::after{opacity:1}
+.mc-1::after{background:linear-gradient(90deg,var(--green),var(--blue))} .mc-1:hover{border-color:rgba(6,194,112,0.3)}
+.mc-2::after{background:linear-gradient(90deg,var(--blue),var(--purple))} .mc-2:hover{border-color:rgba(67,97,238,0.3)}
+.mc-3::after{background:linear-gradient(90deg,var(--purple),var(--rose))} .mc-3:hover{border-color:rgba(123,47,247,0.3)}
+.mc-4::after{background:linear-gradient(90deg,var(--orange),var(--gold))} .mc-4:hover{border-color:rgba(255,136,17,0.3)}
+.module-card.locked{opacity:0.5;cursor:default;filter:grayscale(0.6)}
+.module-card.locked:hover{transform:none;box-shadow:var(--shadow-sm)}
+.card-lock-overlay{display:none;position:absolute;inset:0;background:rgba(247,248,252,0.7);backdrop-filter:blur(2px);border-radius:var(--r-xl);align-items:center;justify-content:center;flex-direction:column;gap:8px;z-index:5}
+.module-card.locked .card-lock-overlay{display:flex}
+.lock-msg{font-size:0.78rem;font-weight:700;color:var(--ink2);text-align:center;padding:0 16px}
+.card-badge{position:absolute;top:14px;right:14px;padding:3px 9px;border-radius:var(--r-pill);font-size:0.62rem;font-weight:800;letter-spacing:0.8px;text-transform:uppercase}
+.badge-hot{background:var(--rose-lt);color:var(--rose)}
+.badge-new{background:var(--green-lt);color:var(--green)}
+.badge-ai{background:var(--purple-lt);color:var(--purple)}
+.card-icon{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;transition:transform 0.3s var(--ease)}
+.module-card:hover .card-icon{transform:rotate(-8deg) scale(1.12)}
+.mc-1 .card-icon{background:var(--green-lt)} .mc-2 .card-icon{background:var(--blue-lt)}
+.mc-3 .card-icon{background:var(--purple-lt)} .mc-4 .card-icon{background:var(--orange-lt)}
+.card-num{font-size:0.65rem;font-weight:700;color:var(--ink3);font-family:'DM Sans',sans-serif;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.card-title{font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;color:var(--ink);margin-bottom:4px}
+.card-desc{font-size:0.82rem;color:var(--ink2);line-height:1.55}
+.card-footer{margin-top:auto}
+.prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:0.7rem;font-weight:600;color:var(--ink3)}
+.prog-track{height:5px;border-radius:10px;background:var(--bg);overflow:hidden;border:1px solid var(--border)}
+.prog-fill{height:100%;border-radius:10px;transition:width 1.2s var(--ease);width:0%}
+.mc-1 .prog-fill{background:linear-gradient(90deg,var(--green),var(--blue))}
+.mc-2 .prog-fill{background:linear-gradient(90deg,var(--blue),var(--purple))}
+.mc-3 .prog-fill{background:linear-gradient(90deg,var(--purple),var(--rose))}
+.mc-4 .prog-fill{background:linear-gradient(90deg,var(--orange),var(--gold))}
+
+/* CONTEXT BAR */
+.ctx-bar{display:flex;align-items:center;gap:10px;padding:12px 18px;background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);margin-bottom:18px;box-shadow:var(--shadow-sm);flex-wrap:wrap}
+.ctx-tag{display:flex;align-items:center;gap:5px;font-size:0.8rem;font-weight:600}
+.ctx-label{color:var(--ink3);font-size:0.72rem}
+.ctx-value{color:var(--blue)}
+.ctx-value.purple{color:var(--purple)}
+.ctx-sep{color:var(--border);font-size:1.2rem;user-select:none}
+.ctx-change{font-size:0.75rem;font-weight:600;color:var(--blue);cursor:pointer;text-decoration:underline;text-underline-offset:2px;opacity:0.7;transition:opacity 0.2s}
+.ctx-change:hover{opacity:1}
+
+/* PROMPT BANNERS */
+.prompt-banner{display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:var(--r-lg);border:1.5px dashed;margin-bottom:18px;cursor:pointer;transition:background 0.2s}
+.prompt-banner.grade-p{border-color:rgba(67,97,238,0.3);background:var(--blue-lt)}
+.prompt-banner.grade-p:hover{background:rgba(67,97,238,0.08)}
+.prompt-banner.lang-p{border-color:rgba(123,47,247,0.3);background:var(--purple-lt)}
+.prompt-banner.lang-p:hover{background:rgba(123,47,247,0.08)}
+.pb-icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.grade-p .pb-icon{background:rgba(67,97,238,0.12)}
+.lang-p .pb-icon{background:rgba(123,47,247,0.12)}
+.pb-text{flex:1}
+.pb-title{font-family:'Nunito',sans-serif;font-size:0.92rem;font-weight:800;color:var(--ink);margin-bottom:2px}
+.pb-sub{font-size:0.78rem;color:var(--ink2)}
+.pb-arrow{color:var(--ink3)}
+
+/* MODALS */
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(26,29,46,0.5);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;padding:16px}
+.overlay.open{opacity:1;pointer-events:all}
+.modal-box{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:36px;max-width:420px;width:100%;transform:scale(0.9) translateY(16px);transition:transform 0.35s var(--ease);box-shadow:0 40px 80px rgba(26,29,46,0.25)}
+.overlay.open .modal-box{transform:scale(1) translateY(0)}
+.modal-step{font-size:0.68rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.grade-confirm .modal-step{color:var(--blue)}
+.lang-modal .modal-step{color:var(--purple)}
+.modal-title{font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:900;color:var(--ink);margin-bottom:6px}
+.modal-sub{font-size:0.85rem;color:var(--ink2);line-height:1.55;margin-bottom:24px}
+.confirm-grade-label{font-family:'Nunito',sans-serif;font-size:2rem;font-weight:900;color:var(--blue);text-align:center;background:var(--blue-lt);border-radius:var(--r-lg);padding:16px;margin-bottom:20px;border:1.5px solid rgba(67,97,238,0.15)}
+.modal-actions{display:flex;gap:10px}
+.lang-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:22px}
+.lang-option{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:var(--r-md);background:var(--bg);border:1.5px solid var(--border);cursor:pointer;transition:all 0.2s var(--ease);position:relative}
+.lang-option:hover{border-color:rgba(123,47,247,0.4);background:var(--purple-lt);transform:translateY(-2px)}
+.lang-option.selected{background:var(--purple-lt);border-color:var(--purple);box-shadow:0 4px 12px rgba(123,47,247,0.15)}
+.lang-option.selected::after{content:'✓';position:absolute;top:7px;right:9px;font-size:0.6rem;font-weight:800;color:var(--purple)}
+.lang-flag{width:38px;height:38px;border-radius:10px;background:var(--white);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;font-family:'Nunito',sans-serif;color:var(--ink2);border:1.5px solid var(--border);flex-shrink:0}
+.lang-option.selected .lang-flag{background:rgba(123,47,247,0.1);border-color:rgba(123,47,247,0.2);color:var(--purple)}
+.lang-name{font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:800;color:var(--ink)}
+.lang-native{font-size:0.72rem;color:var(--ink3);margin-top:1px}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;z-index:500;display:flex;align-items:center;gap:12px;padding:13px 18px;background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-lg);box-shadow:0 16px 40px rgba(26,29,46,0.15);font-size:0.86rem;font-weight:600;color:var(--ink);transform:translateY(80px);opacity:0;transition:all 0.4s var(--ease);max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* FOOTER */
+.footer{border-top:1px solid var(--border);padding:26px 32px;text-align:center;font-size:0.8rem;color:var(--ink3);background:var(--white)}
+.footer strong{color:var(--ink2)}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(24px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .nav{padding:0 16px}
+  .hero{grid-template-columns:1fr;padding:32px 16px 24px}
+  .stat-cards{flex-direction:row;flex-wrap:wrap}
+  .stat-card{min-width:140px}
+  .section,.stepper-wrap{padding-left:16px;padding-right:16px}
+  .module-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+  .module-grid{grid-template-columns:1fr}
+  .hero h1{font-size:1.9rem}
+  .stat-cards{display:none}
+  .hero-actions{flex-direction:column}
+  .btn{justify-content:center}
+  .lang-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-icon" id="toastIcon"></div>
+  <span id="toastMsg"></span>
+</div>
+
+<!-- GRADE CONFIRM MODAL -->
+<div class="overlay grade-confirm" id="gradeConfirm">
+  <div class="modal-box">
+    <div class="modal-step">Step 1 of 2</div>
+    <div class="modal-title">Confirm Grade</div>
+    <div class="modal-sub">Your learning content will be personalised for this level. You'll pick the language next.</div>
+    <div class="confirm-grade-label" id="confirmGradeLabel">Grade 5</div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeGradeConfirm()" style="flex:1">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmGrade()" style="flex:1">
+        Next: Language
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- LANGUAGE MODAL -->
+<div class="overlay lang-modal" id="langModal">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-step">Step 2 of 2</div>
+    <div class="modal-title">Choose Language</div>
+    <div class="modal-sub">All exercises will be in this language. You can change it anytime.</div>
+    <div class="lang-grid" id="langGrid"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeLangModal()" style="flex:1">Back</button>
+      <button class="btn btn-primary" onclick="confirmLanguage()" id="langConfirmBtn" style="flex:1" disabled>
+        Start Learning
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="#" class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M10 3C6.13 3 3 6.13 3 10a7 7 0 0012.4 4.4l2.1 1.1-.6-2.5A6.97 6.97 0 0017 10c0-3.87-3.13-7-7-7z" fill="white"/>
+        <path d="M7 9.5h6M7 12h4" stroke="rgba(67,97,238,0.8)" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span class="logo-text">Talky<span>Lab</span></span>
+  </a>
+  <div class="nav-right">
+    <div class="pill-badge xp">⭐ <span id="topXP">2,450 XP</span></div>
+    <div class="pill-badge streak">🔥 <span>12 days</span></div>
+    <div class="avatar" id="topAvatar">ST</div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <div class="hero-badge"><div class="dot"></div>AI-Powered Learning</div>
+    <h1>Learn English with<br/><span class="accent">Confidence</span> ✨</h1>
+    <p class="hero-sub">Pronunciation training, listening exercises, vocabulary building, and AI-powered feedback — designed for every grade level.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary" onclick="scrollToGrades()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Start Learning
+      </button>
+      <button class="btn btn-outline" onclick="scrollToModules()">Browse Modules</button>
+    </div>
+  </div>
+  <div class="stat-cards">
+    <div class="stat-card stat-c1"><div class="stat-label">Students</div><div class="stat-value" id="statStudents">0</div></div>
+    <div class="stat-card stat-c2"><div class="stat-label">Modules</div><div class="stat-value" id="statModules">0</div></div>
+    <div class="stat-card stat-c3"><div class="stat-label">Accuracy Avg</div><div class="stat-value" id="statAccuracy">0%</div></div>
+    <div class="stat-card stat-c4"><div class="stat-label">Lessons Done</div><div class="stat-value" id="statLessons">0</div></div>
+  </div>
+</section>
+
+<!-- STEPPER -->
+<div class="stepper-wrap">
+  <div class="stepper">
+    <div class="step" id="step1">
+      <div class="step-num">1</div>
+      <span>Select Grade</span>
+    </div>
+    <div class="step-arrow">›</div>
+    <div class="step" id="step2">
+      <div class="step-num">2</div>
+      <span>Pick Language</span>
+    </div>
+    <div class="step-arrow">›</div>
+    <div class="step" id="step3">
+      <div class="step-num">3</div>
+      <span>Choose Module</span>
+    </div>
+  </div>
+</div>
+
+<!-- GRADE SECTION -->
+<div class="section" id="gradeSection">
+  <div class="sec-header">
+    <div class="sec-title">Choose Your <span>Grade</span></div>
+    <a href="#" class="sec-link">View curriculum →</a>
+  </div>
+  <div class="grade-groups">
+    <div>
+      <div class="group-label">Early Learners</div>
+      <div class="grade-row" id="gradeRowEarly"></div>
+    </div>
+    <div>
+      <div class="group-label">Primary</div>
+      <div class="grade-row" id="gradeRowPrimary"></div>
+    </div>
+    <div>
+      <div class="group-label">Middle School</div>
+      <div class="grade-row" id="gradeRowMiddle"></div>
+    </div>
+    <div>
+      <div class="group-label">High School</div>
+      <div class="grade-row" id="gradeRowHigh"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULES -->
+<div class="section" id="moduleSection">
+  <div class="sec-header">
+    <div class="sec-title">Learning <span>Modules</span></div>
+    <a href="#" class="sec-link">All modules →</a>
+  </div>
+  <div id="moduleHeaderExtra"></div>
+  <div class="module-grid" id="moduleGrid"></div>
+</div>
+
+<footer class="footer">
+  <strong>Talky Friends Language Lab</strong> &mdash; AI-Powered Educational Platform &mdash; All rights reserved 2025
+</footer>
+
+<script>
+const GRADES = {
+  early:   [{id:'jr_kg',label:'Jr. KG'},{id:'sr_kg',label:'Sr. KG'}],
+  primary: [{id:'1',label:'Grade 1'},{id:'2',label:'Grade 2'},{id:'3',label:'Grade 3'},{id:'4',label:'Grade 4'}],
+  middle:  [{id:'5',label:'Grade 5'},{id:'6',label:'Grade 6'},{id:'7',label:'Grade 7'},{id:'8',label:'Grade 8'}],
+  high:    [{id:'9',label:'Grade 9'},{id:'10',label:'Grade 10'},{id:'11',label:'Grade 11'},{id:'12',label:'Grade 12'}]
+};
+
+const LANGUAGES = [
+  {code:'en', flag:'EN', label:'English', native:'English'}
+];
+
+const MODULES = [
+  {
+    id:'reading', cl:'mc-1', title:'Reading & Speaking',
+    desc:'Sentence-by-sentence pronunciation training with AI accuracy scoring and live feedback.',
+    link:'readandwrite.html', badge:'badge-hot', badgeLabel:'Popular', prog:72, available:true,
+    svg:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="2" width="16" height="20" rx="3" stroke="#06c270" stroke-width="2"/><path d="M7 7h10M7 11h10M7 15h6" stroke="#06c270" stroke-width="1.8" stroke-linecap="round"/><circle cx="18" cy="18" r="4" fill="white" stroke="#06c270" stroke-width="1.5"/><path d="M20.5 20.5l-1.5-1.5" stroke="#06c270" stroke-width="1.3" stroke-linecap="round"/></svg>`
+  },
+  {
+    id:'listening', cl:'mc-2', title:'Listening & Writing',
+    desc:'Hear sentences and transcribe them. Space adventure format — unlock new levels as you improve.',
+    link:'listenandwrite.html', badge:'badge-new', badgeLabel:'New', prog:45, available:true,
+    svg:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 4a7 7 0 00-7 7v3a2 2 0 004 0v-3a3 3 0 016 0v3a2 2 0 004 0v-3a7 7 0 00-7-7z" fill="#4361ee" opacity=".15"/><path d="M12 4C8.13 4 5 7.13 5 11v3a2 2 0 004 0v-3a3 3 0 016 0v3a2 2 0 004 0v-3c0-3.87-3.13-7-7-7z" stroke="#4361ee" stroke-width="1.8"/><path d="M9 17v2a3 3 0 006 0v-2" stroke="#4361ee" stroke-width="1.8" stroke-linecap="round"/></svg>`
+  },
+  {
+    id:'vocab', cl:'mc-3', title:'Vocabulary & Grammar',
+    desc:'Talk-back exercises with phonetic comparison, fluency scoring, and conversation simulation.',
+    link:'VocabandGrammar.html', badge:'badge-ai', badgeLabel:'AI', prog:58, available:true,
+    svg:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 8h14a2 2 0 012 2v6a2 2 0 01-2 2H9l-3.5 2.5V18H4a2 2 0 01-2-2V10a2 2 0 012-2z" stroke="#7b2ff7" stroke-width="1.8" fill="none"/><path d="M7 13h6M7 16h4" stroke="#7b2ff7" stroke-width="1.6" stroke-linecap="round"/></svg>`
+  },
+  {
+    id:'conversation', cl:'mc-4', title:'Conversation Practice',
+    desc:'Story-based conversation practice with grammar checking and downloadable progress reports.',
+    link:'StoryConversation.html', badge:null, badgeLabel:null, prog:30, available:true,
+    svg:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 20l17-14a2.5 2.5 0 00-3.54-3.54L4 20z" stroke="#ff8811" stroke-width="1.8" fill="none" stroke-linejoin="round"/><path d="M15 4l5 5M4 20l-2 2 2-4z" stroke="#ff8811" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+  }
+];
+
+let selectedGrade = localStorage.getItem('tl_grade') || '';
+let selectedLang  = localStorage.getItem('tl_lang')  || '';
+let pendingGrade  = '';
+let pendingLang   = '';
+
+function getGradeLabel(id){
+  for(const tier of Object.values(GRADES)){
+    const g = tier.find(g => g.id === id);
+    if(g) return g.label;
+  }
+  return id;
+}
+function getLangObj(code){ return LANGUAGES.find(l => l.code === code) || null; }
+
+function updateStepper(){
+  const s1=document.getElementById('step1');
+  const s2=document.getElementById('step2');
+  const s3=document.getElementById('step3');
+  [s1,s2,s3].forEach(s=>s.classList.remove('done','active'));
+  if(!selectedGrade && !selectedLang){ s1.classList.add('active'); }
+  else if(selectedGrade && !selectedLang){ s1.classList.add('done'); s2.classList.add('active'); }
+  else { s1.classList.add('done'); s2.classList.add('done'); s3.classList.add('active'); }
+}
+
+function showToast(msg, iconHtml, bg){
+  const t=document.getElementById('toast');
+  document.getElementById('toastIcon').innerHTML=iconHtml;
+  document.getElementById('toastIcon').style.background=bg||'rgba(67,97,238,0.1)';
+  document.getElementById('toastMsg').innerHTML=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+/* Grade flow */
+function openGradeConfirm(id, label){
+  pendingGrade=id;
+  document.getElementById('confirmGradeLabel').textContent=label;
+  document.getElementById('gradeConfirm').classList.add('open');
+}
+function closeGradeConfirm(){ document.getElementById('gradeConfirm').classList.remove('open'); pendingGrade=''; }
+window.closeGradeConfirm=closeGradeConfirm;
+
+function confirmGrade(){
+  if(!pendingGrade) return;
+  selectedGrade=pendingGrade;
+  selectedLang='';
+  localStorage.setItem('tl_grade',selectedGrade);
+  localStorage.removeItem('tl_lang');
+  closeGradeConfirm();
+  renderGrades();
+  updateStepper();
+  setTimeout(()=>openLangModal(),250);
+}
+window.confirmGrade=confirmGrade;
+
+/* Language flow */
+function buildLangGrid(){
+  const grid=document.getElementById('langGrid');
+  grid.innerHTML='';
+  pendingLang=selectedLang;
+  LANGUAGES.forEach(l=>{
+    const opt=document.createElement('div');
+    opt.className='lang-option'+(l.code===pendingLang?' selected':'');
+    opt.innerHTML=`<div class="lang-flag">${l.flag}</div><div><div class="lang-name">${l.label}</div><div class="lang-native">${l.native}</div></div>`;
+    opt.addEventListener('click',()=>{
+      grid.querySelectorAll('.lang-option').forEach(o=>o.classList.remove('selected'));
+      opt.classList.add('selected');
+      pendingLang=l.code;
+      document.getElementById('langConfirmBtn').disabled=false;
+    });
+    grid.appendChild(opt);
+  });
+  document.getElementById('langConfirmBtn').disabled=!pendingLang;
+}
+
+function openLangModal(){ buildLangGrid(); document.getElementById('langModal').classList.add('open'); }
+function closeLangModal(){ document.getElementById('langModal').classList.remove('open'); }
+window.openLangModal=openLangModal;
+window.closeLangModal=closeLangModal;
+
+function confirmLanguage(){
+  if(!pendingLang) return;
+  selectedLang=pendingLang;
+  localStorage.setItem('tl_lang',selectedLang);
+  closeLangModal();
+  updateStepper();
+  renderGrades();
+  renderModules();
+  const gradeLabel=getGradeLabel(selectedGrade);
+  const langObj=getLangObj(selectedLang);
+  showToast(`🎉 <strong>${gradeLabel}</strong> · <strong>${langObj?langObj.label:selectedLang}</strong> — you're all set!`,
+    `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3" stroke="#06c270" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    'rgba(6,194,112,0.1)');
+  setTimeout(()=>scrollToModules(),500);
+}
+window.confirmLanguage=confirmLanguage;
+
+function renderGrades(){
+  const rows={early:'gradeRowEarly',primary:'gradeRowPrimary',middle:'gradeRowMiddle',high:'gradeRowHigh'};
+  let delay=0;
+  for(const [tier,rowId] of Object.entries(rows)){
+    const row=document.getElementById(rowId);
+    if(!row) continue;
+    row.innerHTML='';
+    GRADES[tier].forEach(g=>{
+      const chip=document.createElement('div');
+      chip.className='grade-chip'+(g.id===selectedGrade?' selected':'');
+      chip.textContent=g.label;
+      chip.style.animationDelay=delay+'s';
+      chip.addEventListener('click',()=>openGradeConfirm(g.id,g.label));
+      row.appendChild(chip);
+      delay+=0.04;
+    });
+  }
+}
+
+function renderModules(){
+  const grid=document.getElementById('moduleGrid');
+  const extra=document.getElementById('moduleHeaderExtra');
+  grid.innerHTML=''; extra.innerHTML='';
+  const langObj=getLangObj(selectedLang);
+  const gradeLabel=selectedGrade?getGradeLabel(selectedGrade):'';
+  const ready=selectedGrade&&selectedLang;
+
+  if(!selectedGrade){
+    extra.innerHTML=`<div class="prompt-banner grade-p" onclick="scrollToGrades()">
+      <div class="pb-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="3" y="8" width="12" height="9" rx="2" stroke="#4361ee" stroke-width="1.6"/><path d="M6 8V6a3 3 0 016 0v2" stroke="#4361ee" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+      <div class="pb-text"><div class="pb-title">Select your grade first</div><div class="pb-sub">Tap here to pick your grade — modules will unlock for you.</div></div>
+      <div class="pb-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="#4361ee" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </div>`;
+  } else if(!selectedLang){
+    extra.innerHTML=`<div class="ctx-bar">
+      <div class="ctx-tag"><span class="ctx-label">Grade</span> <span class="ctx-value">${gradeLabel}</span></div>
+      <span class="ctx-sep">·</span>
+      <div class="ctx-tag"><span class="ctx-label">Language</span> <span style="color:var(--ink3);font-size:0.8rem;font-weight:600">Not selected</span></div>
+      <span class="ctx-change" onclick="openLangModal()">Pick language →</span>
+    </div>
+    <div class="prompt-banner lang-p" onclick="openLangModal()">
+      <div class="pb-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6" stroke="#7b2ff7" stroke-width="1.6"/><path d="M9 3v12M3 9h12" stroke="#7b2ff7" stroke-width="1.1"/></svg></div>
+      <div class="pb-text"><div class="pb-title">Now pick your language</div><div class="pb-sub">All module content will adapt to the language you choose.</div></div>
+      <div class="pb-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="#7b2ff7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </div>`;
+  } else {
+    extra.innerHTML=`<div class="ctx-bar">
+      <div class="ctx-tag"><span class="ctx-label">Grade</span> <span class="ctx-value">${gradeLabel}</span></div>
+      <span class="ctx-sep">·</span>
+      <div class="ctx-tag"><span class="ctx-label">Language</span> <span class="ctx-value purple">${langObj?langObj.label:selectedLang}</span></div>
+      <span class="ctx-sep">·</span>
+      <span class="ctx-change" onclick="openGradeConfirm('${selectedGrade}','${gradeLabel}')">Change grade</span>
+      <span class="ctx-sep">·</span>
+      <span class="ctx-change" onclick="openLangModal()">Change language</span>
+    </div>`;
+  }
+
+  MODULES.forEach((m,i)=>{
+    const card=document.createElement('div');
+    const locked=!ready;
+    card.className='module-card '+m.cl+(locked?' locked':'');
+    card.style.animationDelay=(i*0.08)+'s';
+
+    const lockMsg=!selectedGrade?'Select a grade to unlock':!selectedLang?'Pick a language to unlock':'';
+    const lockOverlay=locked?`<div class="card-lock-overlay">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="4" y="10" width="14" height="11" rx="3" stroke="rgba(74,79,106,0.6)" stroke-width="1.8"/><path d="M7 10V7a4 4 0 018 0v3" stroke="rgba(74,79,106,0.6)" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <div class="lock-msg">${lockMsg}</div>
+    </div>`:'';
+
+    card.innerHTML=`${lockOverlay}
+      ${m.badge?`<div class="card-badge ${m.badge}">${m.badgeLabel}</div>`:''}
+      <div class="card-icon">${m.svg}</div>
+      <div>
+        <div class="card-num">Module ${String(i+1).padStart(2,'0')}</div>
+        <div class="card-title">${m.title}</div>
+        <div class="card-desc">${m.desc}</div>
+      </div>
+      <div class="card-footer">
+        <div class="prog-row"><span>${m.prog>0?'Progress':'Not started'}</span><span>${m.prog}%</span></div>
+        <div class="prog-track"><div class="prog-fill" id="prog-${m.id}"></div></div>
+      </div>`;
+
+    card.addEventListener('click',()=>{
+      if(!selectedGrade){
+        document.getElementById('gradeSection').scrollIntoView({behavior:'smooth',block:'center'});
+        showToast('Please select your grade first!','<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="#f5a623" stroke-width="1.5"/><path d="M7 4.5v3M7 9h.01" stroke="#f5a623" stroke-width="1.4" stroke-linecap="round"/></svg>','rgba(245,166,35,0.1)');
+        return;
+      }
+      if(!selectedLang){ openLangModal(); return; }
+      const url=`${m.link}?grade=${encodeURIComponent(selectedGrade)}&lang=${encodeURIComponent(selectedLang)}`;
+      window.location.href=url;
+    });
+
+    grid.appendChild(card);
+    setTimeout(()=>{ const bar=document.getElementById('prog-'+m.id); if(bar) bar.style.width=m.prog+'%'; },600+i*80);
+  });
+}
+
+function scrollToGrades(){ document.getElementById('gradeSection').scrollIntoView({behavior:'smooth'}); }
+function scrollToModules(){ document.getElementById('moduleSection').scrollIntoView({behavior:'smooth'}); }
+window.scrollToGrades=scrollToGrades; window.scrollToModules=scrollToModules;
+
+function animateCounter(el,target,suffix='',dur=1500){
+  let start=null;
+  const step=ts=>{ if(!start) start=ts; const p=Math.min((ts-start)/dur,1); const e=1-Math.pow(1-p,3);
+    el.textContent=Math.round(e*target).toLocaleString()+suffix; if(p<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
+function init(){
+  renderGrades();
+  renderModules();
+  updateStepper();
+  setTimeout(()=>{
+    animateCounter(document.getElementById('statStudents'),12840);
+    animateCounter(document.getElementById('statModules'),4);
+    animateCounter(document.getElementById('statAccuracy'),84,'%');
+    animateCounter(document.getElementById('statLessons'),94200);
+  },400);
+}
+
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>

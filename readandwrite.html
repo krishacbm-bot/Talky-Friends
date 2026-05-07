@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Read & Speak — TalkyLab</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="sentences.js"></script>
+<style>
+:root {
+  --bg:      #06071a;
+  --panel:   rgba(255,255,255,0.04);
+  --border:  rgba(255,255,255,0.09);
+  --border2: rgba(255,255,255,0.15);
+  --text:    #eef0ff;
+  --muted:   rgba(238,240,255,0.55);
+  --dim:     rgba(238,240,255,0.28);
+  --blue:    #4f8ef7;
+  --cyan:    #43e8d8;
+  --violet:  #9b6dff;
+  --green:   #2ddc82;
+  --gold:    #f5c842;
+  --rose:    #ff6b9d;
+  --ease:    cubic-bezier(0.34,1.56,0.64,1);
+  --eout:    cubic-bezier(0.22,1,0.36,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+#starCanvas{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.blob{position:fixed;border-radius:50%;filter:blur(90px);opacity:0.14;pointer-events:none;z-index:0;animation:blobFloat 16s ease-in-out infinite alternate;}
+.b1{width:480px;height:480px;background:#4f8ef7;top:-100px;left:-80px;animation-delay:0s;}
+.b2{width:380px;height:380px;background:#9b6dff;bottom:-80px;right:-60px;animation-delay:-6s;}
+.b3{width:260px;height:260px;background:#43e8d8;top:40%;left:55%;animation-delay:-11s;}
+@keyframes blobFloat{from{transform:translate(0,0) scale(1)}to{transform:translate(28px,36px) scale(1.07)}}
+body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.025;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+.shell{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;}
+
+/* ══ COSMIC OVERLAY ══ */
+#cosmicOverlay {
+  position:fixed;inset:0;z-index:9999;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity 0.12s ease;
+}
+#cosmicCanvas {
+  position:absolute;inset:0;width:100%;height:100%;
+}
+#cosmicMessage {
+  position:relative;z-index:2;text-align:center;pointer-events:none;
+  opacity:0;transform:scale(0.3) translateY(30px);
+  transition:opacity 0.22s cubic-bezier(0.34,1.56,0.64,1),
+             transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+#cosmicMessage.msg-visible {
+  opacity:1;transform:scale(1) translateY(0);
+}
+#cosmicMessage.msg-exit {
+  opacity:0;transform:scale(0.8) translateY(-20px);
+  transition:opacity 0.15s ease,transform 0.15s ease;
+}
+
+/* CORRECT ANSWER message — compact */
+#cosmicMessage.mode-correct .cm-score {
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:clamp(3rem,8vw,5rem);
+  font-weight:800;
+  background:linear-gradient(135deg,#f5c842,#ff6b9d,#43e8d8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 32px rgba(245,200,66,0.8));
+  line-height:1;letter-spacing:-2px;
+}
+#cosmicMessage.mode-correct .cm-label {
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:clamp(1rem,2.5vw,1.4rem);
+  font-weight:700;
+  background:linear-gradient(90deg,#43e8d8,#9b6dff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-top:6px;
+  filter:drop-shadow(0 0 16px rgba(67,232,216,0.7));
+}
+#cosmicMessage.mode-correct .cm-xp {
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:0.9rem;font-weight:700;
+  color:#f5c842;margin-top:8px;letter-spacing:1px;
+}
+
+/* LEVEL COMPLETE message — big & dramatic */
+#cosmicMessage.mode-levelcomplete .cm-score {
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:clamp(2.2rem,6vw,3.8rem);
+  font-weight:800;
+  background:linear-gradient(135deg,#f5c842,#ff6b9d);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 40px rgba(245,200,66,0.9));
+  line-height:1.1;letter-spacing:-1px;
+}
+#cosmicMessage.mode-levelcomplete .cm-label {
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:clamp(1.1rem,3vw,1.7rem);
+  font-weight:700;
+  background:linear-gradient(90deg,#43e8d8,#f5c842);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-top:10px;
+  filter:drop-shadow(0 0 20px rgba(67,232,216,0.7));
+}
+#cosmicMessage.mode-levelcomplete .cm-xp {
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:1rem;font-weight:700;
+  color:#9b6dff;margin-top:12px;letter-spacing:2px;
+  filter:drop-shadow(0 0 10px rgba(155,109,255,0.8));
+}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:62px;background:rgba(6,7,26,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);gap:14px;}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.logo-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--violet));display:flex;align-items:center;justify-content:center;}
+.logo-mark svg{width:18px;height:18px;}
+.logo-name{font-size:1rem;font-weight:800;color:var(--text);}
+.logo-name em{font-style:normal;color:var(--blue);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.nav-pill{display:flex;align-items:center;gap:6px;padding:5px 13px;border-radius:999px;font-size:0.76rem;font-weight:700;border:1px solid;}
+.np-xp{background:rgba(245,200,66,0.08);border-color:rgba(245,200,66,0.25);color:var(--gold);}
+.np-st{background:rgba(255,107,157,0.08);border-color:rgba(255,107,157,0.25);color:var(--rose);}
+.back-link{display:flex;align-items:center;gap:5px;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);font-size:0.78rem;font-weight:600;text-decoration:none;transition:all 0.2s;}
+.back-link:hover{background:rgba(255,255,255,0.09);color:var(--text);}
+
+/* PAGE HEADER */
+.page-head{max-width:1080px;margin:0 auto;width:100%;padding:28px 32px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+.ph-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;background:rgba(67,232,216,0.08);border:1px solid rgba(67,232,216,0.2);font-size:0.65rem;font-weight:800;color:var(--cyan);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+.ph-tag .dot{width:5px;height:5px;border-radius:50%;background:var(--cyan);animation:blink 2s ease infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.ph-title{font-size:clamp(1.7rem,3vw,2.4rem);font-weight:800;line-height:1.1;letter-spacing:-0.8px;}
+.ph-title .gr{background:linear-gradient(90deg,var(--blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.ph-sub{margin-top:8px;font-size:0.86rem;color:var(--muted);max-width:500px;line-height:1.6;}
+.ph-tags{display:flex;gap:7px;margin-top:14px;flex-wrap:wrap;}
+.ph-badge{display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:999px;font-size:0.7rem;font-weight:700;background:rgba(255,255,255,0.04);border:1px solid var(--border);}
+.ph-badge.b-blue{background:rgba(79,142,247,0.08);border-color:rgba(79,142,247,0.2);color:var(--blue);}
+.ph-badge.b-violet{background:rgba(155,109,255,0.08);border-color:rgba(155,109,255,0.2);color:var(--violet);}
+.ph-badge.b-green{background:rgba(45,220,130,0.08);border-color:rgba(45,220,130,0.2);color:var(--green);}
+
+/* STUDENT BAR */
+.student-bar{max-width:1080px;margin:0 auto;width:100%;padding:0 32px 22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.stu-label{font-size:0.72rem;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;flex-shrink:0;}
+.stu-input{padding:8px 16px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;font-weight:600;outline:none;transition:border-color 0.2s;width:200px;}
+.stu-input::placeholder{color:var(--dim);}
+.stu-input:focus{border-color:rgba(79,142,247,0.4);}
+
+/* MAIN GRID */
+.main{max-width:1080px;margin:0 auto;width:100%;padding:0 32px 60px;display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;}
+@media(max-width:860px){.main{grid-template-columns:1fr;padding:0 16px 60px;}.page-head,.student-bar{padding-left:16px;padding-right:16px;}}
+
+/* CARD */
+.card{background:rgba(255,255,255,0.032);border:1px solid var(--border);border-radius:20px;overflow:hidden;}
+.card+.card{margin-top:16px;}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.card-title{font-size:0.88rem;font-weight:700;color:var(--text);}
+
+/* LEVEL CHIPS */
+.sel-row{display:flex;gap:8px;flex-wrap:wrap;}
+.sel-chip{padding:7px 16px;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted);font-size:0.78rem;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.sel-chip:hover{border-color:rgba(79,142,247,0.3);color:var(--text);}
+.sel-chip.active{background:rgba(79,142,247,0.1);border-color:var(--blue);color:var(--blue);}
+
+/* PROGRESS DOTS */
+.q-dots{display:flex;gap:5px;padding:14px 20px 0;}
+.q-dot{flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,0.07);transition:all 0.4s var(--ease);}
+.q-dot.done{background:var(--green);}
+.q-dot.active{background:rgba(79,142,247,0.6);}
+.q-label{padding:5px 20px 0;font-size:0.68rem;color:var(--dim);font-weight:600;}
+
+/* SENTENCE BOX */
+.sent-wrap{padding:18px 20px;}
+.sent-lbl{font-size:0.62rem;font-weight:700;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;}
+.sent-box{background:rgba(255,255,255,0.025);border:1px solid var(--border);border-radius:14px;padding:20px 22px;font-size:1.05rem;line-height:2.2;color:var(--text);min-height:72px;transition:border-color 0.3s;}
+.sent-box.active-speak{border-color:rgba(79,142,247,0.35);box-shadow:0 0 0 3px rgba(79,142,247,0.06);}
+.word{cursor:default;padding:2px 3px;border-radius:4px;transition:background 0.1s,color 0.1s;display:inline;}
+.word.hl{background:rgba(67,232,216,0.2);color:var(--cyan);}
+.word.done{background:rgba(45,220,130,0.1);color:var(--green);}
+
+/* VISUALISER */
+.viz-row{padding:0 20px 12px;display:flex;align-items:center;gap:12px;}
+.viz-wrap{flex:1;height:44px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+#vizCanvas{width:100%;height:100%;display:block;}
+.viz-lbl{font-size:0.72rem;font-weight:700;color:var(--dim);min-width:88px;text-align:right;}
+.viz-lbl.on{color:var(--blue);}
+
+/* SPEED */
+.speed-row{padding:0 20px 12px;display:flex;align-items:center;gap:12px;}
+.sp-lbl{font-size:0.68rem;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;flex-shrink:0;}
+input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:10px;background:rgba(255,255,255,0.08);outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan));cursor:pointer;}
+.sp-val{font-size:0.72rem;font-weight:700;color:var(--cyan);min-width:90px;text-align:right;}
+
+/* BUTTONS */
+.ctrl-row{padding:0 20px 18px;display:flex;gap:10px;flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 22px;border-radius:999px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.84rem;font-weight:700;cursor:pointer;border:none;transition:all 0.2s var(--ease);}
+.btn:active{transform:scale(0.96);}
+.btn:disabled{opacity:0.35;cursor:default;transform:none!important;}
+.btn-play{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#06071a;box-shadow:0 6px 22px rgba(79,142,247,0.28);}
+.btn-play:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 28px rgba(79,142,247,0.38);}
+.btn-speak{background:rgba(45,220,130,0.1);border:1px solid rgba(45,220,130,0.3);color:var(--green);}
+.btn-speak:hover:not(:disabled){background:rgba(45,220,130,0.18);transform:translateY(-2px);}
+.btn-stop{background:rgba(255,107,157,0.1);border:1px solid rgba(255,107,157,0.3);color:var(--rose);display:none;}
+.btn-stop:hover{background:rgba(255,107,157,0.2);transform:translateY(-2px);}
+.btn-next{background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.3);color:var(--blue);display:none;}
+.btn-next:hover{background:rgba(79,142,247,0.18);transform:translateY(-2px);}
+.btn-pdf{background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.3);color:var(--gold);}
+.btn-pdf:hover{background:rgba(245,200,66,0.18);transform:translateY(-2px);}
+
+/* ACCURACY CARD */
+.acc-card{margin:0 20px 16px;border-radius:14px;padding:16px 18px;display:none;animation:fadeUp 0.4s var(--eout);}
+.acc-card.show{display:block;}
+.acc-card.great{background:rgba(45,220,130,0.07);border:1px solid rgba(45,220,130,0.2);}
+.acc-card.good{background:rgba(245,200,66,0.07);border:1px solid rgba(245,200,66,0.2);}
+.acc-card.retry{background:rgba(255,107,157,0.07);border:1px solid rgba(255,107,157,0.2);}
+.acc-top{display:flex;align-items:center;gap:14px;margin-bottom:10px;}
+.acc-score{font-size:2rem;font-weight:800;line-height:1;}
+.acc-card.great .acc-score{color:var(--green);}
+.acc-card.good  .acc-score{color:var(--gold);}
+.acc-card.retry .acc-score{color:var(--rose);}
+.acc-label{font-size:0.82rem;font-weight:700;padding:4px 12px;border-radius:999px;}
+.acc-card.great .acc-label{background:rgba(45,220,130,0.12);color:var(--green);}
+.acc-card.good  .acc-label{background:rgba(245,200,66,0.12);color:var(--gold);}
+.acc-card.retry .acc-label{background:rgba(255,107,157,0.12);color:var(--rose);}
+.acc-track{height:7px;background:rgba(255,255,255,0.06);border-radius:10px;overflow:hidden;margin-top:8px;}
+.acc-fill{height:100%;border-radius:10px;transition:width 1s var(--ease);}
+.acc-card.great .acc-fill{background:linear-gradient(90deg,var(--green),var(--cyan));}
+.acc-card.good  .acc-fill{background:linear-gradient(90deg,var(--gold),#ff9a3c);}
+.acc-card.retry .acc-fill{background:linear-gradient(90deg,var(--rose),var(--violet));}
+.acc-hint{font-size:0.72rem;color:var(--dim);margin-top:8px;}
+
+/* SIDEBAR */
+.side{display:flex;flex-direction:column;gap:16px;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-box{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
+.stat-val{font-size:1.4rem;font-weight:800;line-height:1;}
+.stat-val.blue{color:var(--blue);}
+.stat-val.green{color:var(--green);}
+.stat-val.gold{color:var(--gold);}
+.stat-val.violet{color:var(--violet);}
+.stat-lbl{font-size:0.58rem;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:3px;}
+.sess-list{display:flex;flex-direction:column;}
+.sess-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.sess-row:last-child{border-bottom:none;}
+.sess-k{font-size:0.74rem;color:var(--muted);}
+.sess-v{font-size:0.78rem;font-weight:700;color:var(--text);}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;z-index:9998;display:flex;align-items:center;gap:10px;padding:12px 18px;background:rgba(20,22,42,0.95);border:1px solid var(--border2);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.5);font-size:0.84rem;font-weight:600;color:var(--text);transform:translateY(80px);opacity:0;transition:all 0.4s var(--ease);max-width:300px;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+footer{border-top:1px solid var(--border);padding:20px 32px;text-align:center;color:var(--dim);font-size:0.75rem;margin-top:auto;}
+</style>
+</head>
+<body>
+<canvas id="starCanvas"></canvas>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════
+     COSMIC VICTORY OVERLAY
+══════════════════════════════════ -->
+<div id="cosmicOverlay">
+  <canvas id="cosmicCanvas"></canvas>
+  <div id="cosmicMessage">
+    <div class="cm-score" id="cmScore"></div>
+    <div class="cm-label" id="cmLabel"></div>
+    <div class="cm-xp"   id="cmXP"></div>
+  </div>
+</div>
+
+<div class="shell">
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="index.html" class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M10 3C6.13 3 3 6.13 3 10a7 7 0 0012.4 4.4l2.1 1.1-.6-2.5A7 7 0 0017 10c0-3.87-3.13-7-7-7z" fill="white"/>
+        <path d="M7 9.5h6M7 12h4" stroke="rgba(79,142,247,0.8)" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span class="logo-name">Talky<em>Lab</em></span>
+  </a>
+  <div class="nav-right">
+    <div class="nav-pill np-xp">⭐ <span id="topXP">2,450 XP</span></div>
+    <div class="nav-pill np-st">🔥 <span id="topStreak">12</span></div>
+    <a href="module.html" class="back-link">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L3 6l4.5 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Back
+    </a>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-head">
+  <div>
+    <div class="ph-tag"><span class="dot"></span>MODULE 01</div>
+    <div class="ph-title">Read &amp; <span class="gr">Speak</span></div>
+    <p class="ph-sub">Hear each sentence in Indian English, then speak it aloud. Get instant accuracy feedback after every attempt.</p>
+    <div class="ph-tags">
+      <span class="ph-badge b-blue"   id="gradeBadge">Grade —</span>
+      <span class="ph-badge b-violet" id="levelBadge">⭐ Easy</span>
+      <span class="ph-badge b-green">🇮🇳 Indian English Voice</span>
+    </div>
+  </div>
+  <button class="btn btn-pdf" onclick="downloadPDF()">
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 11h10M7 2v7M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Download Report
+  </button>
+</div>
+
+<!-- STUDENT BAR -->
+<div class="student-bar">
+  <span class="stu-label">Student Name</span>
+  <input class="stu-input" id="stuName" type="text" placeholder="Enter student name…" maxlength="40"/>
+  <span class="stu-label" style="margin-left:12px;">Roll No.</span>
+  <input class="stu-input" id="stuRoll" type="text" placeholder="Roll no." maxlength="20" style="width:120px;"/>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+<div>
+<div class="card" style="animation:fadeUp 0.5s var(--eout) 0.1s both;">
+
+  <div class="card-head">
+    <span class="card-title">Difficulty</span>
+    <div class="sel-row">
+      <button class="sel-chip active" data-lv="easy"   onclick="setLevel('easy')">⭐ Easy</button>
+      <button class="sel-chip"        data-lv="medium" onclick="setLevel('medium')">⭐⭐ Medium</button>
+      <button class="sel-chip"        data-lv="hard"   onclick="setLevel('hard')">⭐⭐⭐ Hard</button>
+    </div>
+  </div>
+
+  <div class="q-dots" id="qDots"></div>
+  <div class="q-label" id="qLabel">Sentence 1 of 10</div>
+
+  <div class="sent-wrap">
+    <div class="sent-lbl">
+      <span>Current Sentence</span>
+      <span id="sentNum">1 / 10</span>
+    </div>
+    <div class="sent-box" id="sentBox">Loading…</div>
+  </div>
+
+  <div class="viz-row">
+    <div class="viz-wrap"><canvas id="vizCanvas"></canvas></div>
+    <div class="viz-lbl" id="vizLbl">Ready</div>
+  </div>
+
+  <div class="speed-row">
+    <span class="sp-lbl">Speed</span>
+    <input type="range" id="speedSlider" min="0.5" max="1.5" step="0.1" value="0.85" oninput="updateSpeed()"/>
+    <span class="sp-val" id="speedVal">Slow (0.85×)</span>
+  </div>
+
+  <div class="ctrl-row">
+    <button class="btn btn-play" id="playBtn" onclick="playSentence()">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 1.5l9 5-9 5V1.5z" fill="currentColor"/></svg>
+      Play Sentence
+    </button>
+    <button class="btn btn-speak" id="speakBtn" onclick="startSpeech()">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="4.5" y="1" width="5" height="7" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 7.5a5 5 0 0010 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="12.5" x2="7" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Speak Now
+    </button>
+    <button class="btn btn-stop"  id="stopBtn"  onclick="stopAll()">⏹ Stop</button>
+    <button class="btn btn-next"  id="nextBtn"  onclick="advance()">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M4 2l5 4.5L4 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Next Sentence
+    </button>
+  </div>
+
+  <div class="acc-card" id="accCard">
+    <div class="acc-top">
+      <div class="acc-score" id="accScore">—</div>
+      <div>
+        <div class="acc-label" id="accLabel">—</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:3px;" id="accMsg"></div>
+      </div>
+    </div>
+    <div style="font-size:0.6rem;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Accuracy</div>
+    <div class="acc-track"><div class="acc-fill" id="accFill" style="width:0%"></div></div>
+    <div class="acc-hint" id="accHint"></div>
+  </div>
+
+</div></div>
+
+<!-- SIDEBAR -->
+<div class="side">
+  <div class="card" style="animation:fadeUp 0.5s var(--eout) 0.2s both;">
+    <div class="card-head"><span class="card-title">Session Stats</span></div>
+    <div class="card-body" style="padding:14px;">
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-val blue"   id="sDone">0</div><div class="stat-lbl">Done</div></div>
+        <div class="stat-box"><div class="stat-val green"  id="sAvg">—</div><div class="stat-lbl">Avg Acc</div></div>
+        <div class="stat-box"><div class="stat-val gold"   id="sXP">+0</div><div class="stat-lbl">XP Earned</div></div>
+        <div class="stat-box"><div class="stat-val violet" id="sBest">—</div><div class="stat-lbl">Best Score</div></div>
+      </div>
+      <div class="sess-list" style="margin-top:12px;">
+        <div class="sess-row"><span class="sess-k">Session Time</span>    <span class="sess-v" id="sessTime">0:00</span></div>
+        <div class="sess-row"><span class="sess-k">Sentences Played</span><span class="sess-v" id="sessPlayed">0</span></div>
+        <div class="sess-row"><span class="sess-k">Grade</span>            <span class="sess-v" id="sessGrade">—</span></div>
+        <div class="sess-row"><span class="sess-k">Difficulty</span>       <span class="sess-v" id="sessDiff">Easy</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="animation:fadeUp 0.5s var(--eout) 0.4s both;border-color:rgba(155,109,255,0.2);">
+    <div class="card-body" style="padding:16px 18px;">
+      <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:5px;">📄 Session Report</div>
+      <div style="font-size:0.74rem;color:var(--muted);margin-bottom:14px;line-height:1.55;">Download your report with per-sentence accuracy, total score, grade, and remarks.</div>
+      <div style="display:flex;flex-direction:column;gap:5px;font-size:0.72rem;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--dim);">Student</span><span style="font-weight:700;" id="rpName">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--dim);">Grade</span><span style="font-weight:700;" id="rpGrade">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--dim);">Difficulty</span><span style="font-weight:700;" id="rpDiff">Easy</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:var(--dim);">Avg Accuracy</span><span style="font-weight:700;color:var(--green);" id="rpAcc">—</span></div>
+      </div>
+      <button class="btn btn-pdf" style="width:100%;justify-content:center;" onclick="downloadPDF()">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 11h10M7 2v7M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Download PDF Report
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+<footer>TalkyLab Language Lab — Module 01: Read &amp; Speak — AI-Powered Educational Platform</footer>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   COSMIC VICTORY ENGINE  v2  —  Three.js powered
+   ✅ Correct answer  → quick burst, NO globe, 1.5 s
+   🏆 Level complete  → full burst + globe rise/spin, 3.5 s
+════════════════════════════════════════════════════════════ */
+(function(){
+  const overlay = document.getElementById('cosmicOverlay');
+  const cvCanvas= document.getElementById('cosmicCanvas');
+  const msgEl   = document.getElementById('cosmicMessage');
+  const scoreEl = document.getElementById('cmScore');
+  const labelEl = document.getElementById('cmLabel');
+  const xpEl    = document.getElementById('cmXP');
+
+  /* ── renderer ── */
+  const renderer = new THREE.WebGLRenderer({canvas:cvCanvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, 2, 0.1, 500);
+  camera.position.set(0, 0, 14);
+
+  /* ── lights ── */
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  const ptA = new THREE.PointLight(0xf5c842, 4, 25); ptA.position.set(0, 3, 5);   scene.add(ptA);
+  const ptB = new THREE.PointLight(0x43e8d8, 3, 25); ptB.position.set(-4,-2, 4);  scene.add(ptB);
+  const ptC = new THREE.PointLight(0xff6b9d, 2, 20); ptC.position.set(4, -1, 4);  scene.add(ptC);
+
+  /* ── internal state ── */
+  let active=false, frameT=0, shakeMag=0;
+  let particles=null, shockwaves=[], streaks=[], globe=null;
+  let isLevelComplete=false;
+  let hideTimer=null, msgExitTimer=null;
+
+  /* ── resize ── */
+  function resize(){
+    const W=cvCanvas.clientWidth  || window.innerWidth;
+    const H=cvCanvas.clientHeight || window.innerHeight;
+    renderer.setSize(W, H, false);
+    camera.aspect = W/H;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  /* ════ FACTORY: particles ════ */
+  function makeParticles(count){
+    const geo  = new THREE.BufferGeometry();
+    const pos  = new Float32Array(count*3);
+    const col  = new Float32Array(count*3);
+    const vels = [];
+    const pal  = [
+      new THREE.Color(0xf5c842), new THREE.Color(0xff6b9d), new THREE.Color(0x43e8d8),
+      new THREE.Color(0x9b6dff), new THREE.Color(0x2ddc82), new THREE.Color(0x4f8ef7),
+      new THREE.Color(0xffffff), new THREE.Color(0xff9a3c)
+    ];
+    for(let i=0;i<count;i++){
+      pos[i*3]=pos[i*3+1]=pos[i*3+2]=0;
+      const c=pal[i%pal.length];
+      col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b;
+      const theta=Math.random()*Math.PI*2;
+      const phi  =Math.acos(2*Math.random()-1);
+      const spd  =0.09+Math.random()*0.28;
+      vels.push({
+        x: Math.sin(phi)*Math.cos(theta)*spd,
+        y: Math.sin(phi)*Math.sin(theta)*spd + 0.04,
+        z: Math.cos(phi)*spd*0.5,
+        gy: -0.003 - Math.random()*0.004,
+        life: 1,
+        /* correct-burst fades faster (38f), level-complete slower (60f) */
+        maxLife: isLevelComplete ? 60 : 38
+      });
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+    const mat = new THREE.PointsMaterial({
+      size: 0.17, vertexColors:true, transparent:true, opacity:1, sizeAttenuation:true
+    });
+    const pts = new THREE.Points(geo, mat);
+    scene.add(pts);
+    return {pts, geo, vels, count, t:0};
+  }
+
+  /* ════ FACTORY: shockwave ring ════ */
+  function makeShockwave(startR, color, speed){
+    const mat  = new THREE.MeshBasicMaterial({color, side:THREE.DoubleSide, transparent:true, opacity:0.85});
+    const geo  = new THREE.RingGeometry(startR, startR+0.15, 90);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.x = Math.PI * 0.12;
+    scene.add(mesh);
+    return {mesh, mat, r:startR, speed:speed||0.18, life:1};
+  }
+
+  /* ════ FACTORY: shooting streak ════ */
+  function makeStreak(){
+    const geo  = new THREE.CylinderGeometry(0.022, 0.004, 2.8, 8);
+    const mat  = new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.9});
+    const mesh = new THREE.Mesh(geo, mat);
+    const ang  = Math.random()*Math.PI*2;
+    const dist = 6+Math.random()*4;
+    mesh.position.set(Math.cos(ang)*dist, (Math.random()-0.5)*6, Math.random()*2-1);
+    const spd  = 0.28+Math.random()*0.22;
+    const dir  = new THREE.Vector3(-Math.cos(ang)*spd, -Math.sin(ang)*spd*0.25, 0);
+    mesh.lookAt(mesh.position.clone().add(dir));
+    mesh.rotateX(Math.PI/2);
+    scene.add(mesh);
+    /* correct-burst streaks decay much faster */
+    return {mesh, mat, dir, life:1, decay: isLevelComplete ? 0.034 : 0.065};
+  }
+
+  /* ════ FACTORY: 3D globe (level-complete only) ════ */
+  function makeGlobe(){
+    const g = new THREE.Group();
+    /* Earth sphere */
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(1.8, 36, 36),
+      new THREE.MeshPhongMaterial({color:0x1a6fff, emissive:0x0a2288, shininess:160})
+    );
+    /* wireframe overlay */
+    const wire = new THREE.Mesh(
+      new THREE.SphereGeometry(1.84, 22, 22),
+      new THREE.MeshBasicMaterial({color:0x55ccff, wireframe:true, opacity:0.18, transparent:true})
+    );
+    /* equatorial ring */
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(2.3, 2.6, 80),
+      new THREE.MeshBasicMaterial({color:0xf5c842, side:THREE.DoubleSide, opacity:0.55, transparent:true})
+    );
+    ring.rotation.x = Math.PI / 2.3;
+    /* glowing halo (large faint sphere) */
+    const halo = new THREE.Mesh(
+      new THREE.SphereGeometry(2.3, 24, 24),
+      new THREE.MeshBasicMaterial({color:0x4f8ef7, transparent:true, opacity:0.07, side:THREE.BackSide})
+    );
+    g.add(sphere); g.add(wire); g.add(ring); g.add(halo);
+    g.position.set(0, -16, 0); /* start off-screen below */
+    scene.add(g);
+    return g;
+  }
+
+  /* ════ CLEANUP ════ */
+  function clearScene(){
+    if(particles){ scene.remove(particles.pts); particles=null; }
+    shockwaves.forEach(s=>scene.remove(s.mesh)); shockwaves=[];
+    streaks.forEach(s=>scene.remove(s.mesh));    streaks=[];
+    if(globe){ scene.remove(globe); globe=null; }
+    if(hideTimer){clearTimeout(hideTimer);hideTimer=null;}
+    if(msgExitTimer){clearTimeout(msgExitTimer);msgExitTimer=null;}
+  }
+
+  /* ════ MAIN RENDER LOOP (always running) ════ */
+  function loop(){
+    requestAnimationFrame(loop);
+    if(!active){ renderer.render(scene, camera); return; }
+    frameT++;
+
+    /* ── globe: rise → spin → hold → exit ── */
+    if(globe){
+      globe.rotation.y += 0.038;
+      globe.rotation.x += 0.010;
+      if(globe.position.y < 0)  globe.position.y = Math.min(globe.position.y + 0.55, 0);
+      /* hold at y=0 for ~70 frames, then exit fast */
+      if(frameT > 80)           globe.position.y -= 0.50;
+      if(globe.position.y < -16){ scene.remove(globe); globe=null; }
+    }
+
+    /* ── particles ── */
+    if(particles){
+      particles.t++;
+      const pos = particles.geo.attributes.position.array;
+      for(let i=0;i<particles.count;i++){
+        const v=particles.vels[i];
+        v.x*=0.980; v.z*=0.980; v.y+=v.gy;
+        pos[i*3]+=v.x; pos[i*3+1]+=v.y; pos[i*3+2]+=v.z;
+      }
+      particles.geo.attributes.position.needsUpdate=true;
+      const ml = particles.vels[0].maxLife;
+      particles.pts.material.opacity = Math.max(0, 1 - particles.t/ml);
+      if(particles.t > ml){ scene.remove(particles.pts); particles=null; }
+    }
+
+    /* ── shockwaves ── */
+    shockwaves = shockwaves.filter(sw=>{
+      sw.r    += sw.speed;
+      sw.life -= isLevelComplete ? 0.030 : 0.048;
+      sw.mesh.geometry.dispose();
+      sw.mesh.geometry   = new THREE.RingGeometry(sw.r, sw.r+0.15, 90);
+      sw.mat.opacity     = sw.life * 0.8;
+      if(sw.life<=0){ scene.remove(sw.mesh); return false; }
+      return true;
+    });
+
+    /* ── streaks ── */
+    streaks = streaks.filter(s=>{
+      s.mesh.position.add(s.dir);
+      s.life      -= s.decay;
+      s.mat.opacity = s.life;
+      if(s.life<=0){ scene.remove(s.mesh); return false; }
+      return true;
+    });
+
+    /* ── camera shake — decays fast ── */
+    if(shakeMag > 0.003){
+      camera.position.x = Math.sin(frameT*2.5)*shakeMag;
+      camera.position.y = Math.cos(frameT*1.9)*shakeMag;
+      shakeMag *= 0.70;
+    } else {
+      camera.position.x *= 0.80;
+      camera.position.y *= 0.80;
+    }
+
+    /* ── light pulse ── */
+    ptA.intensity = 2.5 + Math.sin(frameT*0.18)*2;
+
+    /* ── auto-deactivate when all effects done ── */
+    const done = !particles && shockwaves.length===0 && streaks.length===0 && !globe;
+    if(done && frameT > 40){ active=false; frameT=0; }
+
+    renderer.render(scene, camera);
+  }
+  loop();
+
+  /* ════ MESSAGE HELPERS ════ */
+  function showMsg(score, label, xp){
+    scoreEl.textContent = score;
+    labelEl.textContent = label;
+    xpEl.textContent    = xp ? '+'+xp+' XP' : '';
+    /* force reflow so transition fires */
+    msgEl.classList.remove('msg-exit');
+    msgEl.offsetHeight; // reflow
+    msgEl.classList.add('msg-visible');
+  }
+
+  function hideMsg(delay){
+    msgExitTimer = setTimeout(()=>{
+      msgEl.classList.add('msg-exit');
+      msgEl.classList.remove('msg-visible');
+      setTimeout(()=> msgEl.classList.remove('msg-exit'), 300);
+    }, delay);
+  }
+
+  /* ════ PUBLIC: CORRECT ANSWER BURST ════
+     Super snappy — NO globe — 0.9 s total
+  ════════════════════════════════════════ */
+  window.cosmicCorrect = function(scoreStr, xpAmt){
+    clearScene();
+    isLevelComplete = false;
+    msgEl.className = 'mode-correct';
+    active=true; frameT=0;
+
+    /* sharp instant shake */
+    shakeMag = 0.32;
+
+    /* lean particle count — vanishes fast */
+    particles = makeParticles(100);
+
+    /* 3 VERY fast shockwave rings */
+    shockwaves.push(makeShockwave(0.1, 0xf5c842, 0.42));
+    shockwaves.push(makeShockwave(0.1, 0x43e8d8, 0.34));
+    shockwaves.push(makeShockwave(0.1, 0xff6b9d, 0.26));
+
+    /* 5 streaks, all fire immediately */
+    for(let i=0;i<5;i++)
+      setTimeout(()=> streaks.push(makeStreak()), i*25);
+
+    /* show overlay + message */
+    overlay.style.opacity = '1';
+    showMsg(scoreStr, '🌟 Brilliant!', xpAmt);
+    hideMsg(420);   /* message exits at 420 ms */
+
+    /* overlay gone at 900 ms */
+    hideTimer = setTimeout(()=> overlay.style.opacity='0', 900);
+  };
+
+  /* ════ PUBLIC: LEVEL COMPLETE ════
+     Full cosmic: particles + shockwaves + streaks + 3D globe
+     Globe rises fast, spins for ~1.2 s, exits fast
+     Total duration: ~2.2 s
+  ════════════════════════════════════════ */
+  window.cosmicLevelComplete = function(levelName, avgScore){
+    clearScene();
+    isLevelComplete = true;
+    msgEl.className = 'mode-levelcomplete';
+    active=true; frameT=0;
+
+    /* strong instant shake */
+    shakeMag = 0.55;
+
+    /* globe: rises fast, shorter hold */
+    globe = makeGlobe();
+
+    /* rich particle burst */
+    particles = makeParticles(220);
+
+    /* 5 layered shockwaves — fast speeds */
+    shockwaves.push(makeShockwave(0.1, 0xf5c842, 0.38));
+    shockwaves.push(makeShockwave(0.1, 0x43e8d8, 0.30));
+    shockwaves.push(makeShockwave(0.1, 0xff6b9d, 0.24));
+    shockwaves.push(makeShockwave(0.1, 0x9b6dff, 0.34));
+    shockwaves.push(makeShockwave(0.1, 0xffffff, 0.20));
+
+    /* second wave at 180 ms */
+    setTimeout(()=>{
+      shockwaves.push(makeShockwave(0.1, 0xf5c842, 0.44));
+      shockwaves.push(makeShockwave(0.1, 0x43e8d8, 0.36));
+    }, 180);
+
+    /* 14 streaks staggered over 0.8 s */
+    for(let i=0;i<14;i++)
+      setTimeout(()=> streaks.push(makeStreak()), i*58);
+
+    /* show overlay */
+    overlay.style.opacity = '1';
+    showMsg('Level Complete!', levelName + ' · Avg ' + avgScore + '%', null);
+    hideMsg(1600);  /* message exits at 1.6 s */
+
+    /* overlay fades at 2.2 s */
+    hideTimer = setTimeout(()=> overlay.style.opacity='0', 2200);
+  };
+})();
+
+
+/* ══ STARS ══ */
+(function(){
+  const c=document.getElementById('starCanvas'),ctx=c.getContext('2d');let s=[];
+  function resize(){c.width=innerWidth;c.height=innerHeight;}
+  function make(){s=[];for(let i=0;i<120;i++)s.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.3+0.2,a:Math.random(),sp:Math.random()*0.007+0.002,d:Math.random()>.5?1:-1});}
+  function draw(){ctx.clearRect(0,0,c.width,c.height);s.forEach(p=>{p.a+=p.sp*p.d;if(p.a>=1||p.a<=0)p.d*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(200,210,255,${p.a})`;ctx.fill();});requestAnimationFrame(draw);}
+  window.addEventListener('resize',()=>{resize();make();});resize();make();draw();
+})();
+
+/* ══ VISUALISER ══ */
+const vizC=document.getElementById('vizCanvas'),vizCtx=vizC.getContext('2d');
+function resizeViz(){vizC.width=vizC.offsetWidth;vizC.height=vizC.offsetHeight;}
+window.addEventListener('resize',resizeViz);
+function drawViz(){
+  requestAnimationFrame(drawViz);
+  const W=vizC.width,H=vizC.height; vizCtx.clearRect(0,0,W,H);
+  const n=36,gap=2,bw=(W-(n-1)*gap)/n;
+  for(let i=0;i<n;i++){
+    const t=Date.now(); let h;
+    if(vizMode==='idle')      h=3+Math.abs(Math.sin(t/1200+i*0.3))*4;
+    else if(vizMode==='play') h=4+Math.abs(Math.sin(t/280+i*0.5))*(H*0.55)*(0.4+0.6*Math.abs(Math.sin(i*0.4+t/480)));
+    else                      h=4+Math.abs(Math.sin(t/140+i*0.65))*(H*0.75)*(0.5+0.4*Math.random()*0.3);
+    const x=i*(bw+gap),y=(H-h)/2;
+    const g=vizCtx.createLinearGradient(x,y,x,y+h);
+    if(vizMode==='play')       {g.addColorStop(0,'rgba(79,142,247,0.9)');g.addColorStop(1,'rgba(67,232,216,0.4)');}
+    else if(vizMode==='listen'){g.addColorStop(0,'rgba(45,220,130,0.9)');g.addColorStop(1,'rgba(155,109,255,0.4)');}
+    else                       {g.addColorStop(0,'rgba(80,85,120,0.4)');g.addColorStop(1,'rgba(80,85,120,0.15)');}
+    vizCtx.fillStyle=g;vizCtx.beginPath();vizCtx.roundRect(x,y,bw,h,2);vizCtx.fill();
+  }
+}
+
+/* ══ CONSTANTS & STATE ══ */
+const TOTAL_SENTENCES = 10;
+const GRADE_LABELS = {
+  jr_kg:'Jr KG', sr_kg:'Sr KG',
+  '1':'Grade 1','2':'Grade 2','3':'Grade 3','4':'Grade 4','5':'Grade 5',
+  '6':'Grade 6','7':'Grade 7','8':'Grade 8','9':'Grade 9','10':'Grade 10',
+  '11':'Grade 11','12':'Grade 12'
+};
+const _urlGrade = new URLSearchParams(location.search).get('grade');
+const grade     = (_urlGrade && typeof SENTENCES!=='undefined' && SENTENCES[_urlGrade])
+                  ? _urlGrade
+                  : (localStorage.getItem('selectedGrade') || 'jr_kg');
+localStorage.setItem('selectedGrade', grade);
+const gradeLabel = GRADE_LABELS[grade] || ('Grade ' + grade);
+
+let level='easy', qIdx=0, sessXP=0, sessPlayed=0, sessBest=0;
+let accHistory=[], nextTimer=null, recognition=null, recognizing=false;
+let sessionStart=Date.now(), vizMode='idle';
+
+/* ══ SENTENCES ══ */
+function getSentences(){
+  if(typeof SENTENCES==='undefined'||!SENTENCES[grade]||!SENTENCES[grade][level]) return ['(No sentences found.)'];
+  return SENTENCES[grade][level];
+}
+
+function loadSentence(){
+  const arr=getSentences(), s=arr[Math.min(qIdx,arr.length-1)];
+  document.getElementById('sentBox').innerHTML=s.split(/\s+/).map((w,i)=>`<span class="word" id="w${i}">${w}</span>`).join(' ');
+  document.getElementById('sentBox').classList.remove('active-speak');
+  document.getElementById('sentNum').textContent=(qIdx+1)+' / '+TOTAL_SENTENCES;
+  renderDots();
+  const ac=document.getElementById('accCard');
+  ac.classList.remove('show');ac.className='acc-card';
+  document.getElementById('nextBtn').style.display='none';
+  if(nextTimer){clearTimeout(nextTimer);nextTimer=null;}
+}
+
+function renderDots(){
+  document.getElementById('qDots').innerHTML=
+    Array.from({length:TOTAL_SENTENCES},(_,i)=>
+      `<div class="q-dot${i<qIdx?' done':i===qIdx?' active':''}"></div>`).join('');
+  document.getElementById('qLabel').textContent=
+    `Sentence ${Math.min(qIdx+1,TOTAL_SENTENCES)} of ${TOTAL_SENTENCES}`;
+}
+
+/* ══ LEVEL ══ */
+function setLevel(lv){
+  level=lv;
+  document.querySelectorAll('[data-lv]').forEach(b=>b.classList.toggle('active',b.dataset.lv===lv));
+  document.getElementById('levelBadge').textContent={easy:'⭐ Easy',medium:'⭐⭐ Medium',hard:'⭐⭐⭐ Hard'}[lv];
+  document.getElementById('sessDiff').textContent={easy:'Easy',medium:'Medium',hard:'Hard'}[lv];
+  document.getElementById('rpDiff').textContent={easy:'Easy',medium:'Medium',hard:'Hard'}[lv];
+  qIdx=0;accHistory=[];stopAll();loadSentence();
+}
+window.setLevel=setLevel;
+
+/* ══ TTS ══ */
+function playSentence(){
+  stopAll();
+  const arr=getSentences(),s=arr[Math.min(qIdx,arr.length-1)];
+  const speed=parseFloat(document.getElementById('speedSlider').value);
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(s);
+  u.lang='en-IN';u.rate=speed;u.pitch=1;
+  const voices=speechSynthesis.getVoices();
+  const v=voices.find(v=>v.lang==='en-IN')||voices.find(v=>v.lang.startsWith('en-IN'))||
+           voices.find(v=>v.name.toLowerCase().includes('india'))||
+           voices.find(v=>v.lang.startsWith('en'))||voices[0];
+  if(v)u.voice=v;
+  let wc=0;
+  u.onboundary=e=>{if(e.name==='word'){document.querySelectorAll('.word').forEach((el,i)=>{el.classList.toggle('hl',i===wc);el.classList.toggle('done',i<wc);});wc++;}};
+  u.onstart=()=>{vizMode='play';setVizLbl('🔊 Playing…',true);document.getElementById('sentBox').classList.add('active-speak');document.getElementById('stopBtn').style.display='';sessPlayed++;document.getElementById('sessPlayed').textContent=sessPlayed;};
+  u.onend=u.onerror=()=>{vizMode='idle';setVizLbl('Ready',false);document.getElementById('sentBox').classList.remove('active-speak');document.getElementById('stopBtn').style.display='none';document.querySelectorAll('.word').forEach(el=>{el.classList.remove('hl');el.classList.add('done');});};
+  speechSynthesis.speak(u);
+}
+window.playSentence=playSentence;
+
+/* ══ SPEECH REC ══ */
+let _accumulated = ''; /* collects ALL spoken words across interim+final results */
+let _scored      = false; /* guard: score only once per attempt */
+
+function resetSpeakBtn(){
+  document.getElementById('speakBtn').innerHTML=
+    '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="4.5" y="1" width="5" height="7" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 7.5a5 5 0 0010 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="12.5" x2="7" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Speak Now';
+}
+
+function startSpeech(){
+  if(recognizing){ stopAndScore(); return; } /* Stop pressed while listening → score now */
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){showToast('Speech recognition not supported in this browser.');return;}
+  speechSynthesis.cancel();
+
+  _accumulated=''; _scored=false;
+  recognition=new SR();
+
+  /* ── KEY CHANGE: interimResults=true so we capture everything in real time ── */
+  recognition.lang='en-IN';
+  recognition.continuous=true;
+  recognition.interimResults=true;   /* capture words AS they are spoken */
+  recognition.maxAlternatives=1;
+
+  recognition.onstart=()=>{
+    recognizing=true; vizMode='listen';
+    setVizLbl('🔴 Listening…',true);
+    document.getElementById('speakBtn').textContent='⏹ Stop';
+    document.getElementById('stopBtn').style.display='';
+  };
+
+  /* accumulate every result — both interim and final — into _accumulated */
+  recognition.onresult=e=>{
+    let full='';
+    for(let i=0;i<e.results.length;i++){
+      full+=e.results[i][0].transcript+' ';
+    }
+    _accumulated=full.trim();
+    /* live label so student sees words being captured */
+    setVizLbl('🔴 '+_accumulated.split(' ').length+' words…',true);
+  };
+
+  recognition.onerror=e=>{
+    if(e.error==='no-speech'||e.error==='aborted') return; /* ignore abort on stop */
+    showToast('Mic error: '+e.error+'. Please try again.');
+    _finishSpeech();
+  };
+
+  /* onend fires after stop() — score whatever was accumulated */
+  recognition.onend=()=>{
+    _finishSpeech();
+  };
+
+  recognition.start();
+}
+window.startSpeech=startSpeech;
+
+/* called when Stop button pressed — stop recognition, which triggers onend → score */
+function stopAndScore(){
+  if(recognition){ try{ recognition.stop(); }catch(e){} }
+}
+
+function _finishSpeech(){
+  recognizing=false; vizMode='idle';
+  setVizLbl('Ready',false);
+  resetSpeakBtn();
+  document.getElementById('stopBtn').style.display='none';
+
+  if(_scored) return; /* already scored */
+  if(_accumulated.trim()){
+    _scored=true;
+    scoreAndShow(_accumulated);
+  } else {
+    showToast('No speech captured. Please speak clearly and try again.');
+  }
+  recognition=null;
+}
+
+function stopSpeech(){
+  if(recognizing){
+    stopAndScore(); /* stop → triggers onend → _finishSpeech → scoreAndShow */
+  } else {
+    if(recognition){try{recognition.stop();}catch(e){}}
+    recognition=null; recognizing=false; vizMode='idle';
+  }
+}
+
+function stopAll(){
+  speechSynthesis.cancel();
+  /* if currently recognizing, score what we have, else just clean up */
+  if(recognizing){
+    stopAndScore();
+  } else {
+    if(recognition){try{recognition.stop();}catch(e){}}
+    recognition=null; recognizing=false;
+    document.getElementById('stopBtn').style.display='none';
+    setVizLbl('Ready',false); vizMode='idle';
+  }
+}
+window.stopAll=stopAll;
+function setVizLbl(txt,on){const el=document.getElementById('vizLbl');el.textContent=txt;el.className='viz-lbl'+(on?' on':'');}
+
+/* ══ SCORING ══ */
+function scoreAndShow(spoken){
+  const arr=getSentences();
+  const target=arr[Math.min(qIdx,arr.length-1)].toLowerCase().replace(/[^\w\s]/g,'');
+  const spk=spoken.toLowerCase().replace(/[^\w\s]/g,'');
+  const tw=target.split(/\s+/).filter(x=>x),sw=spk.split(/\s+/).filter(x=>x);
+  let matches=0;
+  sw.forEach(w=>{if(tw.some(t=>t.includes(w)||w.includes(t)))matches++;});
+  const acc=Math.min(100,Math.round((matches/Math.max(tw.length,1))*100));
+  accHistory.push({score:acc,sentence:arr[Math.min(qIdx,arr.length-1)]});
+  if(acc>sessBest){sessBest=acc;document.getElementById('sBest').textContent=acc+'%';}
+  const avg=Math.round(accHistory.reduce((a,b)=>a+b.score,0)/accHistory.length);
+  document.getElementById('sDone').textContent=accHistory.length;
+  document.getElementById('sAvg').textContent=avg+'%';
+  document.getElementById('rpAcc').textContent=avg+'%';
+
+  const xp=acc>=80?20:acc>=60?12:6;
+  sessXP+=xp;
+  document.getElementById('sXP').textContent='+'+sessXP;
+  document.getElementById('topXP').textContent=(2450+sessXP).toLocaleString()+' XP';
+
+  const tier=acc>=80?'great':acc>=55?'good':'retry';
+  const ac=document.getElementById('accCard');
+  ac.className='acc-card show '+tier;
+  document.getElementById('accScore').textContent=acc+'/100';
+  document.getElementById('accLabel').textContent=acc>=80?'🌟 Excellent!':acc>=55?'👍 Good job!':'💪 Try Again';
+  document.getElementById('accMsg').textContent=acc>=80?'Brilliant pronunciation!':acc>=55?'Nice — keep practicing!':'Listen again and retry.';
+  document.getElementById('accFill').style.width='0%';
+  setTimeout(()=>{document.getElementById('accFill').style.width=acc+'%';},100);
+
+  if(acc>=60){
+    document.getElementById('accHint').textContent='✅ Great! Click "Next Sentence" to continue.';
+    document.getElementById('nextBtn').style.display='inline-flex';
+
+    /* ✨ CORRECT ANSWER BURST — quick, no globe, 1.5 s */
+    if(acc>=80) cosmicCorrect(acc+'%', xp);
+
+  } else {
+    document.getElementById('accHint').textContent='Try again — press Speak Now to retry this sentence.';
+  }
+}
+
+/* ══ ADVANCE ══ */
+function advance(){
+  qIdx++;
+  if(qIdx >= TOTAL_SENTENCES){
+    /* ✨ LEVEL COMPLETE — full cosmic + globe, 3.5 s */
+    const avg = accHistory.length
+      ? Math.round(accHistory.reduce((a,b)=>a+b.score,0)/accHistory.length) : 0;
+    const lvLabel={easy:'Easy',medium:'Medium',hard:'Hard'}[level];
+    cosmicLevelComplete(lvLabel, avg);
+
+    showToast('🎉 All '+TOTAL_SENTENCES+' sentences done! +'+sessXP+' XP earned.');
+
+    /* reset after animation completes */
+    setTimeout(()=>{
+      qIdx=0;
+      accHistory=[];
+      loadSentence();
+    }, 2500);
+    return;
+  }
+  loadSentence();
+}
+window.advance=advance;
+
+/* ══ SPEED ══ */
+function updateSpeed(){
+  const v=parseFloat(document.getElementById('speedSlider').value);
+  document.getElementById('speedVal').textContent=(v<=0.6?'Very Slow':v<=0.8?'Slow':v<=1.0?'Normal':v<=1.2?'Fast':'Very Fast')+' ('+v+'×)';
+}
+window.updateSpeed=updateSpeed;
+
+/* ══ TIMER ══ */
+function updateTimer(){
+  const e=Math.floor((Date.now()-sessionStart)/1000);
+  document.getElementById('sessTime').textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');
+}
+
+/* ══ REPORT PREVIEW ══ */
+function updateReportPreview(){document.getElementById('rpName').textContent=document.getElementById('stuName').value||'—';}
+document.getElementById('stuName').addEventListener('input',updateReportPreview);
+
+/* ══ TOAST ══ */
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);}
+
+/* ══ PDF ══ */
+function downloadPDF(){
+  const {jsPDF}=window.jspdf;
+  if(!jsPDF){showToast('PDF library loading, try again.');return;}
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210,M=18,arr=getSentences();
+  const avg=accHistory.length?Math.round(accHistory.reduce((a,b)=>a+b.score,0)/accHistory.length):0;
+  const date=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const name=document.getElementById('stuName').value||'—';
+  const roll=document.getElementById('stuRoll').value||'—';
+  const levelLabel={easy:'Easy',medium:'Medium',hard:'Hard'}[level];
+  const elapsed=Math.floor((Date.now()-sessionStart)/1000);
+  const dur=Math.floor(elapsed/60)+'m '+String(elapsed%60).padStart(2,'0')+'s';
+  const totalQ=accHistory.length;
+  let y=0;
+  const t=(s,x,yy,o)=>doc.text(s,x,yy,o||{});
+  const r=(x,yy,w,h,rd,fill)=>{doc.setFillColor(...fill);rd>0?doc.roundedRect(x,yy,w,h,rd,rd,'F'):doc.rect(x,yy,w,h,'F');};
+  const ln=(x1,y1,x2,y2,rr,g,b,lw)=>{doc.setDrawColor(rr,g,b);doc.setLineWidth(lw||0.3);doc.line(x1,y1,x2,y2);};
+
+  r(0,0,W,26,0,[240,245,255]);
+  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(79,142,247);t('TalkyLab',M,12);
+  doc.setFontSize(8);doc.setTextColor(100,110,160);t('Read & Speak — Session Report',M+35,12);
+  doc.setFontSize(8);doc.setTextColor(120,130,180);t(date,W-M,12,{align:'right'});
+  doc.setFontSize(7);doc.setTextColor(140,150,190);t('Module 01 · Indian English Voice · '+gradeLabel+' · '+levelLabel,M,20);
+  y=32;
+
+  r(M,y,W-2*M,22,3,[245,248,255]);
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(79,142,247);t('Student Information',M+5,y+7);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(100,110,160);
+  t('Name: ',M+5,y+14);doc.setFont('helvetica','bold');doc.setTextColor(40,50,100);t(name,M+20,y+14);
+  doc.setFont('helvetica','normal');doc.setTextColor(100,110,160);t('Roll No: ',M+75,y+14);
+  doc.setFont('helvetica','bold');doc.setTextColor(40,50,100);t(roll,M+95,y+14);
+  doc.setFont('helvetica','normal');doc.setTextColor(100,110,160);t('Date: ',W-M-60,y+14);
+  doc.setFont('helvetica','bold');doc.setTextColor(40,50,100);t(date,W-M-46,y+14);
+  y+=28;
+
+  const cw=(W-2*M-9)/4;
+  [{label:'Total Score',val:avg>0?avg+'%':'—',col:[79,142,247]},{label:'Sentences Done',val:String(totalQ),col:[45,220,130]},
+   {label:'Best Score',val:sessBest>0?sessBest+'%':'—',col:[245,200,66]},{label:'XP Earned',val:'+'+sessXP,col:[155,109,255]}
+  ].forEach((s,i)=>{
+    const bx=M+i*(cw+3);r(bx,y,cw,20,3,[245,248,255]);
+    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(s.col[0],s.col[1],s.col[2]);t(s.val,bx+cw/2,y+11,{align:'center'});
+    doc.setFont('helvetica','bold');doc.setFontSize(5.5);doc.setTextColor(100,110,160);t(s.label.toUpperCase(),bx+cw/2,y+17,{align:'center'});
+  });
+  y+=26;
+
+  const rmk=avg>=80?'Excellent performance! Keep it up.':avg>=60?'Good effort. Practice more to improve.':avg>0?'Needs more practice. Listen carefully and try again.':'No attempts recorded.';
+  const rc=avg>=80?[45,220,130]:avg>=60?[245,200,66]:[255,107,157];
+  r(M,y,W-2*M,12,3,[245,248,255]);
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(rc[0],rc[1],rc[2]);t('Overall Remark: '+rmk,M+5,y+8);
+  y+=18;
+
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(79,142,247);
+  t('PER-SENTENCE ACCURACY BREAKDOWN',M,y);
+  ln(M+doc.getTextWidth('PER-SENTENCE ACCURACY BREAKDOWN')+3,y-0.5,W-M,y-0.5,79,142,247,0.5);
+  y+=5;
+  r(M,y,W-2*M,8,0,[230,240,255]);
+  doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor(79,142,247);
+  t('#',M+3,y+5.5);t('Sentence',M+10,y+5.5);t('Score',W-M-5,y+5.5,{align:'right'});
+  y+=8;
+
+  const rowH=10;
+  if(!accHistory.length){
+    r(M,y,W-2*M,rowH,0,[248,250,255]);
+    doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(140,150,190);
+    t('No sentences attempted yet.',M+5,y+7);y+=14;
+  } else {
+    accHistory.forEach((item,i)=>{
+      if(y>270){doc.addPage();y=18;}
+      r(M,y,W-2*M,rowH,0,i%2===0?[250,252,255]:[245,248,255]);
+      const sc=item.score,col=sc>=80?[45,220,130]:sc>=55?[245,200,66]:[255,107,157],bx=W-M-40;
+      doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(100,110,160);t(String(i+1),M+3,y+7);
+      doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor(60,70,120);
+      t(item.sentence.length>58?item.sentence.slice(0,55)+'…':item.sentence,M+10,y+7);
+      doc.setFillColor(220,230,250);doc.roundedRect(bx,y+2.5,28,5,2,2,'F');
+      doc.setFillColor(col[0],col[1],col[2]);doc.roundedRect(bx,y+2.5,28*sc/100,5,2,2,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(col[0],col[1],col[2]);
+      t(sc+'%',W-M-3,y+7,{align:'right'});y+=rowH;
+    });
+    for(let i=accHistory.length;i<TOTAL_SENTENCES;i++){
+      if(y>270){doc.addPage();y=18;}
+      r(M,y,W-2*M,rowH,0,i%2===0?[250,252,255]:[245,248,255]);
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(140,150,190);
+      t(String(i+1),M+3,y+7);
+      const sent=arr[i]||'—';t(sent.length>58?sent.slice(0,55)+'…':sent,M+10,y+7);
+      t('Not attempted',W-M-5,y+7,{align:'right'});y+=rowH;
+    }
+  }
+  y+=6;
+
+  if(y>255){doc.addPage();y=18;}
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(79,142,247);
+  t('SESSION DETAILS',M,y);ln(M+doc.getTextWidth('SESSION DETAILS')+3,y-0.5,W-M,y-0.5,79,142,247,0.5);y+=6;
+  const hw=(W-2*M-4)/2;
+  [['Grade',gradeLabel],['Difficulty Level',levelLabel],['Session Duration',dur],
+   ['Total Attempted',String(totalQ)+' / '+TOTAL_SENTENCES],['Average Accuracy',avg>0?avg+'%':'—'],['XP Earned','+'+sessXP+' XP']
+  ].forEach((d,i)=>{
+    const cx=i%2===0?M:M+hw+4;
+    if(i%2===0){r(cx,y,hw,9,0,[250,252,255]);r(cx+hw+4,y,hw,9,0,[245,248,255]);}
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(100,110,160);t(d[0],cx+3,y+6.5);
+    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(40,50,100);t(d[1],cx+hw-3,y+6.5,{align:'right'});
+    if(i%2===1)y+=10;
+  });
+  y+=16;
+
+  if(y>255){doc.addPage();y=18;}
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(79,142,247);
+  t('REMARKS & SUGGESTIONS',M,y);ln(M+doc.getTextWidth('REMARKS & SUGGESTIONS')+3,y-0.5,W-M,y-0.5,79,142,247,0.5);y+=6;
+  ['Practice listening to the Indian English voice daily before attempting to speak.',
+   'Aim for 80%+ accuracy consistently before moving to a harder level.',
+   'Focus on matching rhythm and intonation, not just individual words.',
+   'Complete all '+TOTAL_SENTENCES+' sentences every session to maximise learning and XP earned.'
+  ].forEach((tip,i)=>{
+    r(M,y,W-2*M,9,0,i%2===0?[250,252,255]:[245,248,255]);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(60,70,120);
+    t('• '+tip,M+4,y+6.5,{maxWidth:W-2*M-8});y+=9;
+  });
+  y+=4;
+
+  if(y<258){
+    ln(M,y+14,M+50,y+14,120,130,180,0.4);ln(W-M-50,y+14,W-M,y+14,120,130,180,0.4);
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(120,130,180);
+    t("Teacher's Signature",M,y+18);t("Student's Signature",W-M,y+18,{align:'right'});
+  }
+
+  const pages=doc.getNumberOfPages();
+  for(let p=1;p<=pages;p++){
+    doc.setPage(p);r(0,284,W,13,0,[240,245,255]);
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(100,110,160);
+    t('TalkyLab Language Lab — AI-Powered Educational Platform — Module 01: Read & Speak',M,291);
+    t('Page '+p+' of '+pages+'   Generated: '+new Date().toLocaleString(),W-M,291,{align:'right'});
+  }
+
+  doc.save('TalkyLab-Report-'+(name.replace(/\s+/g,'-')||'Student')+'-'+gradeLabel+'-'+levelLabel+'-'+new Date().toISOString().slice(0,10)+'.pdf');
+  showToast('✅ PDF report downloaded!');
+}
+window.downloadPDF=downloadPDF;
+
+/* ══ INIT ══ */
+function init(){
+  document.getElementById('gradeBadge').textContent = gradeLabel;
+  document.getElementById('sessGrade').textContent  = gradeLabel;
+  document.getElementById('rpGrade').textContent    = gradeLabel;
+  resizeViz(); drawViz();
+  updateSpeed();
+  setInterval(updateTimer, 1000);
+  speechSynthesis.onvoiceschanged=()=>{};
+  loadSentence();
+}
+document.addEventListener('DOMContentLoaded', init);
+window.addEventListener('beforeunload', ()=>speechSynthesis.cancel());
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) speechSynthesis.cancel(); });
+</script>
+</body>
+</html>

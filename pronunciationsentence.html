@@ -1,0 +1,2643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TalkyLab — Pronunciation Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://code.responsivevoice.org/responsivevoice.js?key=FREE"></script>
+<style>
+:root {
+  --bg: #0a0b0f;
+  --surface: #111318;
+  --surface2: #181b22;
+  --surface3: #1f232d;
+  --border: rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.11);
+  --border3: rgba(255,255,255,0.2);
+
+  --lime: #c8ff57;
+  --lime-d: rgba(200,255,87,.08);
+  --lime-m: rgba(200,255,87,.15);
+  --blue: #4da6ff;
+  --blue-d: rgba(77,166,255,.08);
+  --rose: #ff5e8a;
+  --rose-d: rgba(255,94,138,.08);
+  --amber: #ffb547;
+  --amber-d: rgba(255,181,71,.08);
+  --purple: #a78bfa;
+  --purple-d: rgba(167,139,250,.08);
+  --teal: #2dd4bf;
+  --teal-d: rgba(45,212,191,.08);
+
+  --text1: #f0f2ff;
+  --text2: #7d839e;
+  --text3: #3d4255;
+
+  --fs: 'Syne', sans-serif;
+  --fm: 'Space Mono', monospace;
+  --fi: 'Instrument Serif', serif;
+
+  --r1: 6px;
+  --r2: 12px;
+  --r3: 18px;
+  --r4: 26px;
+  --r5: 40px;
+
+  --spring: cubic-bezier(.34,1.56,.64,1);
+  --eout: cubic-bezier(.16,1,.3,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--fs);
+  background: var(--bg);
+  color: var(--text1);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ── NOISE OVERLAY ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.032'/%3E%3C/svg%3E");
+  opacity: 1;
+}
+
+/* ── GRADIENT ORBS ── */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: .45;
+}
+.orb1 { width: 500px; height: 500px; top: -120px; left: -140px; background: radial-gradient(circle, rgba(200,255,87,.12), transparent 70%); }
+.orb2 { width: 400px; height: 400px; bottom: -80px; right: -100px; background: radial-gradient(circle, rgba(77,166,255,.1), transparent 70%); }
+.orb3 { width: 300px; height: 300px; top: 50%; left: 50%; transform: translate(-50%,-50%); background: radial-gradient(circle, rgba(167,139,250,.06), transparent 70%); }
+
+.shell { position: relative; z-index: 10; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ══ TOPBAR ══ */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 32px;
+  height: 64px;
+  background: rgba(10,11,15,.9);
+  backdrop-filter: blur(28px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.logo-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r1);
+  background: var(--lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0a0b0f;
+  font-family: var(--fm);
+  letter-spacing: -1px;
+}
+.logo-text {
+  font-family: var(--fs);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text1);
+  letter-spacing: -.5px;
+}
+.tb-spacer { flex: 1; }
+.tb-pills { display: flex; align-items: center; gap: 6px; }
+.tb-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: var(--r5);
+  font-size: 0.69rem;
+  font-family: var(--fm);
+  font-weight: 700;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+.pill-mod { background: var(--lime-m); border: 1px solid rgba(200,255,87,.25); color: var(--lime); }
+.pill-lang { background: var(--blue-d); border: 1px solid rgba(77,166,255,.2); color: var(--blue); }
+.pill-xp { background: var(--amber-d); border: 1px solid rgba(255,181,71,.2); color: var(--amber); }
+.pill-streak { background: var(--rose-d); border: 1px solid rgba(255,94,138,.2); color: var(--rose); }
+.tb-acts { display: flex; gap: 6px; }
+.tb-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r1);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  color: var(--text2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s;
+}
+.tb-btn:hover { border-color: var(--border2); color: var(--text1); background: rgba(255,255,255,.07); }
+.tb-btn.active { border-color: rgba(200,255,87,.4); background: var(--lime-m); color: var(--lime); }
+
+/* ══ VOICE BANNER ══ */
+.voice-banner {
+  max-width: 1100px;
+  margin: 12px auto 0;
+  padding: 0 28px;
+  width: 100%;
+}
+.vb-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border-radius: var(--r2);
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  flex-wrap: wrap;
+}
+.vb-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; transition: background .4s; }
+.vb-dot.loading { background: var(--blue); animation: blink .6s ease infinite; }
+.vb-dot.ok { background: var(--lime); box-shadow: 0 0 10px rgba(200,255,87,.4); }
+.vb-dot.warn { background: var(--amber); }
+.vb-dot.error { background: var(--rose); animation: blink .8s ease infinite; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.25} }
+.vb-text { font-size: 0.76rem; color: var(--text2); flex: 1; font-family: var(--fm); }
+.vb-text strong { color: var(--text1); font-weight: 700; }
+.btn-testvox {
+  padding: 4px 13px;
+  border-radius: var(--r5);
+  font-family: var(--fs);
+  font-size: 0.71rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(200,255,87,.3);
+  background: var(--lime-m);
+  color: var(--lime);
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.btn-testvox:hover { background: rgba(200,255,87,.22); }
+.btn-testvox:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ══ TWO-COLUMN LAYOUT ══ */
+.main-layout {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 28px 40px;
+  width: 100%;
+  display: none;
+  gap: 20px;
+}
+.main-layout.show { display: flex; animation: fadeUp .45s var(--eout) both; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sidebar-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r3);
+  overflow: hidden;
+}
+.sc-head {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.63rem;
+  font-family: var(--fm);
+  font-weight: 700;
+  color: var(--text3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sc-head-val { font-size: 0.72rem; color: var(--text1); }
+.sc-body { padding: 14px 16px; }
+
+/* Stats row */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 11px 12px;
+}
+.stat-lbl { font-size: 0.58rem; font-family: var(--fm); color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.stat-val { font-size: 1.3rem; font-weight: 800; font-family: var(--fs); line-height: 1; }
+.stat-val.lime { color: var(--lime); }
+.stat-val.blue { color: var(--blue); }
+.stat-val.amber { color: var(--amber); }
+.stat-val.rose { color: var(--rose); }
+.stat-val.purple { color: var(--purple); }
+
+/* Calendar heatmap */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-top: 2px;
+}
+.hm-day {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  transition: all .2s;
+  position: relative;
+}
+.hm-day[data-score="0"] { background: var(--surface2); }
+.hm-day[data-score="1"] { background: rgba(200,255,87,.15); border-color: rgba(200,255,87,.2); }
+.hm-day[data-score="2"] { background: rgba(200,255,87,.3); border-color: rgba(200,255,87,.35); }
+.hm-day[data-score="3"] { background: rgba(200,255,87,.6); border-color: rgba(200,255,87,.7); }
+.hm-day[data-score="4"] { background: var(--lime); border-color: var(--lime); }
+.hm-day:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  color: var(--text1);
+  font-size: 0.6rem;
+  font-family: var(--fm);
+  padding: 3px 7px;
+  border-radius: var(--r1);
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Skill bars */
+.skill-bar-row { margin-bottom: 10px; }
+.skill-bar-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.skill-bar-lbl { font-size: 0.68rem; font-family: var(--fm); color: var(--text2); }
+.skill-bar-val { font-size: 0.68rem; font-family: var(--fm); font-weight: 700; }
+.skill-track { height: 4px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.skill-fill { height: 100%; border-radius: 4px; transition: width 1.2s var(--spring); }
+
+/* Achievements */
+.achievement-row { display: flex; flex-direction: column; gap: 6px; }
+.ach-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: var(--r2);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  transition: all .2s;
+}
+.ach-item.earned { border-color: rgba(200,255,87,.2); background: rgba(200,255,87,.04); }
+.ach-item.earned:hover { border-color: rgba(200,255,87,.35); }
+.ach-icon { font-size: 1.2rem; flex-shrink: 0; }
+.ach-info { flex: 1; min-width: 0; }
+.ach-name { font-size: 0.72rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ach-name.earned { color: var(--lime); }
+.ach-name.locked { color: var(--text3); }
+.ach-desc { font-size: 0.6rem; color: var(--text3); font-family: var(--fm); }
+
+/* Word journal */
+.wj-list { display: flex; flex-direction: column; gap: 5px; max-height: 200px; overflow-y: auto; }
+.wj-list::-webkit-scrollbar { width: 3px; }
+.wj-list::-webkit-scrollbar-track { background: transparent; }
+.wj-list::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+.wj-entry {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border-radius: var(--r1);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+.wj-word { font-size: 0.74rem; font-weight: 700; flex: 1; }
+.wj-count { font-size: 0.6rem; font-family: var(--fm); color: var(--text3); }
+.wj-badge { font-size: 0.6rem; font-family: var(--fm); padding: 2px 7px; border-radius: 999px; }
+.wj-badge.ok { background: rgba(200,255,87,.12); color: var(--lime); }
+.wj-badge.err { background: rgba(255,94,138,.12); color: var(--rose); }
+.wj-empty { font-size: 0.75rem; color: var(--text3); font-family: var(--fm); text-align: center; padding: 12px 0; }
+
+/* ── MAIN CONTENT ── */
+.content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+
+/* ══ LEVEL MAP VIEW ══ */
+.level-map {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 28px 48px;
+  display: none;
+  width: 100%;
+}
+.level-map.show { display: block; animation: fadeUp .45s var(--eout) both; }
+.lm-header { margin-bottom: 32px; }
+.lm-eyebrow {
+  font-size: 0.65rem;
+  font-family: var(--fm);
+  font-weight: 700;
+  color: var(--lime);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.lm-title {
+  /* font-family: var(--fi); */
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  font-weight: 400;
+  color: var(--text1);
+  line-height: 1.15;
+  margin-bottom: 10px;
+}
+.lm-title em { font-style: italic; color: var(--lime); }
+.lm-sub { color: var(--text2); font-size: 0.86rem; max-width: 480px; }
+
+/* Quick stats on map */
+.map-stats { display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
+.map-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: var(--r5);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 0.76rem;
+}
+.ms-icon { font-size: 1rem; }
+.ms-val { font-weight: 800; }
+.ms-lbl { color: var(--text2); 
+  /* font-family: var(--fm); font-size: 0.67rem;  */
+}
+
+/* Module cards */
+.module-grid { display: flex; flex-direction: column; gap: 16px; }
+.module-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r4);
+  overflow: hidden;
+  position: relative;
+  transition: border-color .3s;
+}
+.module-card:hover { border-color: var(--border2); }
+.module-card.easy:hover { border-color: rgba(200,255,87,.2); }
+.module-card.medium:hover { border-color: rgba(255,181,71,.2); }
+.module-card.hard:hover { border-color: rgba(255,94,138,.2); }
+.mc-stripe { height: 2px; }
+.mc-stripe.easy { background: linear-gradient(90deg,var(--lime),#a3e635); }
+.mc-stripe.medium { background: linear-gradient(90deg,var(--amber),#f97316); }
+.mc-stripe.hard { background: linear-gradient(90deg,var(--rose),var(--purple)); }
+.mc-inner { padding: 22px 26px; }
+.mc-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.mc-info { display: flex; align-items: center; gap: 14px; }
+.mc-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+.mc-icon-wrap.easy { background: rgba(200,255,87,.1); border: 1px solid rgba(200,255,87,.2); }
+.mc-icon-wrap.medium { background: rgba(255,181,71,.1); border: 1px solid rgba(255,181,71,.2); }
+.mc-icon-wrap.hard { background: rgba(255,94,138,.1); border: 1px solid rgba(255,94,138,.2); }
+.mc-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 3px; }
+.mc-title.easy { color: var(--lime); }
+.mc-title.medium { color: var(--amber); }
+.mc-title.hard { color: var(--rose); }
+.mc-desc { font-size: 0.75rem; color: var(--text2); }
+.mc-badge {
+  padding: 5px 13px;
+  border-radius: var(--r5);
+  font-size: 0.65rem;
+  font-family: var(--fm);
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+.mc-badge.locked { background: rgba(255,255,255,.04); border: 1px solid var(--border); color: var(--text3); }
+.mc-badge.available { background: var(--lime-m); border: 1px solid rgba(200,255,87,.25); color: var(--lime); }
+.mc-badge.done { background: rgba(200,255,87,.15); border: 1px solid rgba(200,255,87,.3); color: var(--lime); }
+/* Level dots */
+.levels-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.lv-dot {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--r2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: all .25s var(--spring);
+  border: 1.5px solid;
+  position: relative;
+}
+.lv-dot.locked { border-color: var(--border); background: rgba(255,255,255,.02); cursor: not-allowed; }
+.lv-dot.available.easy { border-color: rgba(200,255,87,.3); background: rgba(200,255,87,.06); }
+.lv-dot.available.medium { border-color: rgba(255,181,71,.3); background: rgba(255,181,71,.06); }
+.lv-dot.available.hard { border-color: rgba(255,94,138,.3); background: rgba(255,94,138,.06); }
+.lv-dot.available:hover { transform: translateY(-4px) scale(1.07); box-shadow: 0 12px 28px rgba(0,0,0,.3); }
+.lv-dot.done { border-color: rgba(200,255,87,.4); background: rgba(200,255,87,.1); }
+.lv-dot.current-level { animation: lvPulse 2.2s ease infinite; }
+.lv-dot.current-level.easy { border-color: var(--lime); background: rgba(200,255,87,.15); }
+@keyframes lvPulse { 0%,100%{box-shadow:0 0 0 0 rgba(200,255,87,.3)}60%{box-shadow:0 0 0 9px rgba(200,255,87,0)} }
+.lv-num { font-family: var(--fm); font-size: 0.58rem; color: var(--text3); }
+.lv-icon { font-size: 1rem; }
+.lv-score { font-family: var(--fm); font-size: 0.55rem; color: var(--text3); }
+.lv-dot.done .lv-score { color: var(--lime); }
+/* Progress bar */
+.mc-progress { }
+.mc-prog-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.mc-prog-lbl { font-size: 0.62rem; font-family: var(--fm); color: var(--text3); }
+.mc-prog-pct { font-size: 0.62rem; font-family: var(--fm); font-weight: 700; }
+.mc-prog-pct.easy { color: var(--lime); }
+.mc-prog-pct.medium { color: var(--amber); }
+.mc-prog-pct.hard { color: var(--rose); }
+.mc-prog-track { height: 3px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.mc-prog-fill { height: 100%; border-radius: 3px; transition: width .9s var(--spring); }
+.mc-prog-fill.easy { background: linear-gradient(90deg,var(--lime),#a3e635); }
+.mc-prog-fill.medium { background: linear-gradient(90deg,var(--amber),#f97316); }
+.mc-prog-fill.hard { background: linear-gradient(90deg,var(--rose),var(--purple)); }
+/* Locked overlay */
+.mc-locked-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10,11,15,.72);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r4);
+  z-index: 5;
+}
+.lock-msg { text-align: center; }
+.lock-msg .li { font-size: 2.2rem; margin-bottom: 8px; }
+.lock-msg p { font-size: 0.78rem; color: var(--text2); }
+.lock-msg strong { color: var(--amber); }
+
+/* ══ PRACTICE VIEW — two column ══ */
+.practice-view {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 28px 48px;
+  display: none;
+  gap: 20px;
+  width: 100%;
+  align-items: flex-start;
+}
+.practice-view.show { display: flex; animation: fadeUp .4s var(--eout) both; }
+.pv-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.pv-right { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; }
+
+/* Breadcrumb */
+.breadcrumb { display: flex; align-items: center; gap: 7px; font-size: 0.72rem; color: var(--text3); flex-wrap: wrap; }
+.bc-crumb { cursor: pointer; transition: color .2s; }
+.bc-crumb:hover { color: var(--text1); }
+.bc-sep { color: var(--text3); }
+.bc-active { font-family: var(--fm); font-weight: 700; color: var(--lime); }
+
+/* Sentence progress */
+.sent-progress {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r3);
+  padding: 16px 20px;
+}
+.sp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sp-title { font-size: 0.6rem; font-family: var(--fm); color: var(--text3); letter-spacing: 2px; text-transform: uppercase; }
+.sp-fraction { font-size: 0.9rem; font-weight: 800; color: var(--lime); }
+.sp-dots { display: flex; gap: 7px; flex-wrap: wrap; }
+.sp-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  font-family: var(--fm);
+  font-weight: 700;
+  transition: all .3s var(--spring);
+  border: 1.5px solid;
+}
+.sp-dot.pending { border-color: var(--border); background: rgba(255,255,255,.02); color: var(--text3); }
+.sp-dot.current { border-color: var(--lime); background: rgba(200,255,87,.12); color: var(--lime); animation: lvPulse 2s ease infinite; }
+.sp-dot.done { border-color: rgba(200,255,87,.4); background: rgba(200,255,87,.1); color: var(--lime); }
+.sp-dot.failed { border-color: rgba(255,94,138,.4); background: rgba(255,94,138,.08); color: var(--rose); }
+.sp-track { height: 3px; border-radius: 3px; background: rgba(255,255,255,.05); overflow: hidden; margin-top: 12px; }
+.sp-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg,var(--lime),var(--teal)); transition: width .7s var(--spring); }
+
+/* Sentence card */
+.sent-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r4);
+  overflow: hidden;
+  transition: border-color .4s, box-shadow .4s;
+}
+.sent-card.state-listen { border-color: rgba(77,166,255,.25); box-shadow: 0 0 40px rgba(77,166,255,.04); }
+.sent-card.state-recording { border-color: rgba(255,94,138,.35); box-shadow: 0 0 40px rgba(255,94,138,.06); }
+.sent-card.state-scored { border-color: rgba(200,255,87,.2); box-shadow: 0 0 40px rgba(200,255,87,.04); }
+.card-stripe { height: 2px; }
+.card-stripe.easy { background: linear-gradient(90deg,var(--lime),var(--teal)); }
+.card-stripe.medium { background: linear-gradient(90deg,var(--amber),var(--rose)); }
+.card-stripe.hard { background: linear-gradient(90deg,var(--rose),var(--purple)); }
+.card-body { padding: 26px 28px; }
+.card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.c-num { font-family: var(--fm); font-size: 0.62rem; color: var(--text3); }
+.c-diff {
+  padding: 3px 9px;
+  border-radius: var(--r5);
+  font-size: 0.58rem;
+  font-family: var(--fm);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.diff-easy { background: rgba(200,255,87,.1); border: 1px solid rgba(200,255,87,.2); color: var(--lime); }
+.diff-medium { background: rgba(255,181,71,.1); border: 1px solid rgba(255,181,71,.2); color: var(--amber); }
+.diff-hard { background: rgba(255,94,138,.1); border: 1px solid rgba(255,94,138,.2); color: var(--rose); }
+.c-timer-badge {
+  margin-left: auto;
+  font-family: var(--fm);
+  font-size: 0.65rem;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.c-timer-badge.running { color: var(--rose); }
+.sent-text {
+  font-family: var(--fi);
+  font-size: clamp(1.25rem, 2.5vw, 2rem);
+  line-height: 1.65;
+  color: var(--text1);
+  margin-bottom: 10px;
+  word-break: break-word;
+}
+.phonetic { font-family: var(--fm); font-size: 0.72rem; color: var(--text3); margin-bottom: 20px; line-height: 1.5; font-style: italic; }
+.word { display: inline; border-radius: 3px; padding: 1px 2px; transition: all .18s; cursor: default; }
+.word.pending { color: var(--text1); }
+.word.active { color: var(--blue); background: rgba(77,166,255,.1); }
+.word.correct { color: var(--lime); }
+.word.wrong { color: var(--rose); text-decoration: underline; text-decoration-color: rgba(255,94,138,.4); }
+.word.missed { color: var(--text3); opacity: .5; }
+.word.spoken { color: var(--text2); }
+
+/* Controls */
+.controls { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.btn-ctrl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 15px;
+  border-radius: var(--r5);
+  font-family: var(--fs);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s var(--spring);
+  border: 1px solid;
+}
+.btn-listen { background: var(--blue-d); border-color: rgba(77,166,255,.2); color: var(--blue); }
+.btn-listen:hover, .btn-listen.speaking { background: rgba(77,166,255,.16); border-color: rgba(77,166,255,.4); }
+.btn-listen.speaking { animation: listenPulse 1.4s ease infinite; }
+@keyframes listenPulse { 0%,100%{box-shadow:0 0 0 0 rgba(77,166,255,.3)}50%{box-shadow:0 0 0 7px rgba(77,166,255,0)} }
+.btn-slow { background: var(--amber-d); border-color: rgba(255,181,71,.2); color: var(--amber); }
+.btn-slow:hover { background: rgba(255,181,71,.15); }
+.btn-hint { background: var(--purple-d); border-color: rgba(167,139,250,.2); color: var(--purple); }
+.btn-hint:hover { background: rgba(167,139,250,.16); }
+.btn-hint.used { opacity: .38; pointer-events: none; }
+.btn-bookmark {
+  background: rgba(255,255,255,.03);
+  border-color: var(--border);
+  color: var(--text2);
+  padding: 7px 10px;
+}
+.btn-bookmark:hover { border-color: var(--amber); color: var(--amber); background: var(--amber-d); }
+.btn-bookmark.saved { border-color: rgba(255,181,71,.4); color: var(--amber); background: var(--amber-d); }
+
+/* Wave bars */
+.wb { display: flex; align-items: center; gap: 2px; height: 11px; }
+.wbl { width: 2.5px; border-radius: 2px; background: currentColor; }
+.btn-listen.speaking .wbl:nth-child(1) { animation: wv .7s ease infinite 0s; }
+.btn-listen.speaking .wbl:nth-child(2) { animation: wv .7s ease infinite .1s; }
+.btn-listen.speaking .wbl:nth-child(3) { animation: wv .7s ease infinite .2s; }
+.btn-listen.speaking .wbl:nth-child(4) { animation: wv .7s ease infinite .1s; }
+.btn-listen.speaking .wbl:nth-child(5) { animation: wv .7s ease infinite 0s; }
+@keyframes wv { 0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)} }
+.wbl:nth-child(1){height:3px}.wbl:nth-child(2){height:7px}.wbl:nth-child(3){height:11px}.wbl:nth-child(4){height:7px}.wbl:nth-child(5){height:3px}
+
+/* Hint box */
+.hint-box {
+  background: rgba(167,139,250,.05);
+  border: 1px solid rgba(167,139,250,.18);
+  border-radius: var(--r2);
+  padding: 14px 18px;
+  display: none;
+}
+.hint-box.show { display: block; animation: fadeUp .35s var(--spring) both; }
+.hint-head { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+.hint-ico {
+  width: 22px; height: 22px; border-radius: 6px;
+  background: rgba(167,139,250,.15);
+  display: flex; align-items: center; justify-content: center;
+}
+.hint-title { font-size: 0.68rem; font-weight: 700; color: var(--purple); letter-spacing: .5px; }
+.hint-text { font-size: 0.84rem; color: var(--text1); line-height: 1.65; }
+.hint-text strong { color: var(--amber); }
+.hint-text em { color: var(--blue); font-style: normal; }
+
+/* ── MIC ZONE ── */
+.mic-zone {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r4);
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 13px;
+  position: relative;
+  overflow: hidden;
+}
+.mic-zone::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: radial-gradient(ellipse at 50% 120%, rgba(255,94,138,.04), transparent 70%);
+  pointer-events: none;
+}
+.no-speech-notice {
+  width: 100%;
+  background: rgba(255,181,71,.06);
+  border: 1px solid rgba(255,181,71,.2);
+  border-radius: var(--r2);
+  padding: 11px 15px;
+  display: none;
+}
+.no-speech-notice.show { display: block; }
+.nsn-text { font-size: 0.78rem; color: var(--amber); line-height: 1.5; }
+.nsn-text strong { color: var(--text1); }
+.mic-label { font-size: 0.58rem; font-family: var(--fm); font-weight: 700; color: var(--text3); letter-spacing: 2.5px; text-transform: uppercase; }
+.mic-row { display: flex; align-items: center; gap: 20px; position: relative; z-index: 2; }
+.mic-btn-wrap { position: relative; width: 80px; height: 80px; }
+.mic-btn {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255,94,138,.12), rgba(167,139,250,.08));
+  border: 1.5px solid rgba(255,94,138,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .25s var(--spring);
+}
+.mic-btn:hover { transform: scale(1.06); box-shadow: 0 0 30px rgba(255,94,138,.15); }
+.mic-btn.active {
+  border-color: rgba(255,94,138,.7);
+  background: linear-gradient(135deg, rgba(255,94,138,.22), rgba(167,139,250,.14));
+  animation: micPulse 1.8s ease infinite;
+}
+.mic-btn.disabled-btn { opacity: .3; cursor: not-allowed; pointer-events: none; }
+@keyframes micPulse { 0%{box-shadow:0 0 0 0 rgba(255,94,138,.5)}70%{box-shadow:0 0 0 22px rgba(255,94,138,0)}100%{box-shadow:0 0 0 0 rgba(255,94,138,0)} }
+.mic-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(255,94,138,.2); opacity: 0; pointer-events: none; }
+.mic-btn.active ~ .mic-ring-1 { animation: ring 2s ease infinite; }
+.mic-btn.active ~ .mic-ring-2 { animation: ring 2s ease .65s infinite; }
+@keyframes ring { 0%{transform:scale(.7);opacity:.5}100%{transform:scale(2);opacity:0} }
+.waveform { display: flex; align-items: center; gap: 3px; height: 40px; }
+.wvb { width: 4px; border-radius: 3px; background: rgba(255,94,138,.12); transition: height .08s, background .3s; }
+.waveform.active .wvb { background: var(--rose); }
+.mic-status-row { display: flex; align-items: center; gap: 7px; }
+.mic-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); transition: all .3s; }
+.mic-dot.rec { background: var(--rose); animation: blink 1s ease infinite; }
+.mic-status { font-size: 0.78rem; color: var(--text2); font-weight: 600; }
+.mic-status.rec { color: var(--rose); }
+.mic-status.done { color: var(--lime); }
+.transcript-box {
+  width: 100%;
+  background: rgba(0,0,0,.25);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 13px 16px;
+  font-size: 0.86rem;
+  color: var(--text2);
+  min-height: 52px;
+  line-height: 1.65;
+  transition: border-color .3s;
+}
+.transcript-box.has { border-color: rgba(255,94,138,.2); color: var(--text1); }
+.tx-ph { color: var(--text3); font-style: italic; font-family: var(--fm); font-size: 0.78rem; }
+.mic-extras { display: flex; align-items: center; gap: 10px; width: 100%; flex-wrap: wrap; }
+.extras-label { font-size: 0.65rem; font-family: var(--fm); color: var(--text3); white-space: nowrap; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.speed-btns { display: flex; gap: 4px; }
+.spd-btn {
+  padding: 4px 9px;
+  border-radius: var(--r1);
+  font-size: 0.68rem;
+  font-family: var(--fm);
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  transition: all .2s;
+}
+.spd-btn:hover { border-color: var(--border2); color: var(--text2); }
+.spd-btn.active { background: var(--lime-m); border-color: rgba(200,255,87,.3); color: var(--lime); }
+/* Timer challenge mode */
+.timer-bar {
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,.05);
+  border-radius: 3px;
+  overflow: hidden;
+  display: none;
+}
+.timer-bar.show { display: block; }
+.timer-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--lime);
+  transition: width .1s linear, background .5s;
+}
+.timer-fill.warn { background: var(--amber); }
+.timer-fill.urgent { background: var(--rose); }
+
+/* ── SCORE PANEL ── */
+.score-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r4);
+  padding: 24px 26px;
+  display: none;
+}
+.score-panel.show { display: block; animation: fadeUp .45s var(--spring) both; }
+.score-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.score-left { display: flex; align-items: center; gap: 16px; }
+.ring-wrap { position: relative; width: 76px; height: 76px; flex-shrink: 0; }
+.ring-svg { transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: rgba(255,255,255,.05); stroke-width: 8; }
+.ring-fill { fill: none; stroke-linecap: round; stroke-width: 8; stroke-dasharray: 188.5; stroke-dashoffset: 188.5; transition: stroke-dashoffset 1.1s var(--spring), stroke .5s; }
+.ring-lbl {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 800;
+  font-family: var(--fs);
+}
+.score-grade { font-family: var(--fi); font-size: 1.5rem; line-height: 1.1; }
+.score-sub { font-size: 0.73rem; color: var(--text2); font-family: var(--fm); margin-top: 2px; }
+.xp-badge {
+  padding: 6px 14px;
+  border-radius: var(--r5);
+  font-family: var(--fm);
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: var(--amber-d);
+  border: 1px solid rgba(255,181,71,.25);
+  color: var(--amber);
+}
+/* Radar chart */
+.radar-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
+/* Metric grid */
+.metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.metric-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 11px 14px;
+}
+.mc-lbl2 { font-size: 0.59rem; font-family: var(--fm); color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; }
+.mc-val { font-size: 1.2rem; font-weight: 800; margin-bottom: 6px; }
+.mc-bar { height: 3px; border-radius: 3px; background: rgba(255,255,255,.05); overflow: hidden; }
+.mc-fill { height: 100%; border-radius: 3px; width: 0; transition: width 1.1s var(--spring); }
+
+/* Word chips */
+.chips-sec { margin-bottom: 14px; }
+.chips-lbl { font-size: 0.59rem; font-family: var(--fm); color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
+  padding: 3px 10px;
+  border-radius: var(--r5);
+  font-size: 0.72rem;
+  font-family: var(--fm);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.chip.correct { background: rgba(200,255,87,.08); border: 1px solid rgba(200,255,87,.2); color: var(--lime); }
+.chip.wrong { background: rgba(255,94,138,.08); border: 1px solid rgba(255,94,138,.2); color: var(--rose); }
+.chip.missed { background: rgba(255,181,71,.08); border: 1px solid rgba(255,181,71,.2); color: var(--amber); }
+
+/* AI feedback */
+.ai-fb {
+  background: rgba(167,139,250,.05);
+  border: 1px solid rgba(167,139,250,.15);
+  border-radius: var(--r2);
+  padding: 14px 17px;
+  margin-bottom: 14px;
+}
+.af-lbl { font-size: 0.58rem; font-family: var(--fm); color: var(--purple); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; font-weight: 700; }
+.af-text { font-size: 0.84rem; color: var(--text1); line-height: 1.65; }
+.af-text strong { color: var(--amber); }
+
+/* Share score */
+.share-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.share-lbl { font-size: 0.62rem; font-family: var(--fm); color: var(--text3); }
+.btn-share {
+  padding: 5px 12px;
+  border-radius: var(--r5);
+  font-family: var(--fs);
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--border2);
+  background: rgba(255,255,255,.04);
+  color: var(--text2);
+  transition: all .2s;
+}
+.btn-share:hover { border-color: var(--lime); color: var(--lime); background: var(--lime-m); }
+
+.score-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-retry {
+  flex: 1; min-width: 90px;
+  padding: 10px;
+  border-radius: var(--r5);
+  background: var(--rose-d);
+  border: 1px solid rgba(255,94,138,.2);
+  color: var(--rose);
+  font-family: var(--fs);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s var(--spring);
+}
+.btn-retry:hover { background: rgba(255,94,138,.16); transform: translateY(-2px); }
+.btn-next {
+  flex: 2; min-width: 130px;
+  padding: 10px;
+  border-radius: var(--r5);
+  background: var(--lime);
+  color: #0a0b0f;
+  font-family: var(--fs);
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  border: none;
+  transition: all .2s var(--spring);
+  box-shadow: 0 6px 22px rgba(200,255,87,.2);
+}
+.btn-next:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(200,255,87,.3); background: #d4ff5e; }
+.btn-next:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+
+/* ── RIGHT SIDEBAR (practice) ── */
+.pv-right-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r3);
+  overflow: hidden;
+}
+.pvrc-head {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.6rem;
+  font-family: var(--fm);
+  font-weight: 700;
+  color: var(--text3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.pvrc-body { padding: 14px 16px; }
+
+/* Phoneme trainer */
+.phoneme-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+.ph-chip {
+  padding: 4px 10px;
+  border-radius: var(--r1);
+  font-family: var(--fm);
+  font-size: 0.68rem;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .2s;
+}
+.ph-chip:hover { border-color: var(--border2); color: var(--text1); }
+.ph-chip.active { background: var(--blue-d); border-color: rgba(77,166,255,.3); color: var(--blue); }
+
+/* Challenge mode toggle */
+.challenge-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--r2);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  cursor: pointer;
+  transition: all .2s;
+}
+.challenge-toggle:hover { border-color: var(--border2); }
+.ct-label { font-size: 0.75rem; font-weight: 700; }
+.ct-desc { font-size: 0.62rem; color: var(--text2); font-family: var(--fm); }
+.toggle-switch {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  position: relative;
+  transition: background .25s;
+  flex-shrink: 0;
+}
+.toggle-switch.on { background: var(--lime); border-color: transparent; }
+.toggle-knob {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text2);
+  top: 2px;
+  left: 2px;
+  transition: transform .25s var(--spring), background .25s;
+}
+.toggle-switch.on .toggle-knob { transform: translateX(16px); background: #0a0b0f; }
+
+/* Practice tips */
+.tip-list { display: flex; flex-direction: column; gap: 7px; }
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--text2);
+  line-height: 1.5;
+}
+.tip-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--lime); flex-shrink: 0; margin-top: 7px; }
+
+/* ── LEVEL / MODULE COMPLETE ── */
+.level-complete {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 44px 28px;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r4);
+}
+.level-complete.show { display: flex; animation: fadeUp .5s var(--spring) both; }
+.lc-emoji { font-size: 3.2rem; animation: popIn .5s var(--spring) both; }
+.lc-title {
+  font-family: var(--fi);
+  font-size: 2rem;
+  color: var(--text1);
+}
+.lc-title em { color: var(--lime); font-style: italic; }
+.lc-sub { color: var(--text2); font-size: 0.86rem; line-height: 1.65; max-width: 360px; }
+.lc-stats { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.lc-stat {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 80px;
+}
+.lc-stat-val { font-size: 1.6rem; font-weight: 800; }
+.lc-stat-lbl { font-size: 0.56rem; font-family: var(--fm); color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
+.lc-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.btn-next-level {
+  padding: 11px 28px;
+  border-radius: var(--r5);
+  background: var(--lime);
+  color: #0a0b0f;
+  font-family: var(--fs);
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  border: none;
+  transition: all .2s var(--spring);
+  box-shadow: 0 6px 24px rgba(200,255,87,.2);
+}
+.btn-next-level:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(200,255,87,.3); }
+.btn-back-map {
+  padding: 11px 22px;
+  border-radius: var(--r5);
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-family: var(--fs);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-back-map:hover { border-color: var(--border2); color: var(--text1); }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  z-index: 999;
+  padding: 9px 18px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r2);
+  box-shadow: 0 16px 48px rgba(0,0,0,.6);
+  font-size: 0.81rem;
+  font-weight: 600;
+  color: var(--text1);
+  opacity: 0;
+  transition: all .35s var(--spring);
+  white-space: nowrap;
+  pointer-events: none;
+  font-family: var(--fm);
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ── LANG MODAL ── */
+.modal-bg {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(10px);
+  align-items: center;
+  justify-content: center;
+}
+.modal-bg.show { display: flex; }
+.modal-box {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r4);
+  padding: 28px 30px;
+  max-width: 420px;
+  width: 94%;
+  animation: fadeUp .35s var(--spring) both;
+}
+.modal-title { font-family: var(--fi); font-size: 1.3rem; margin-bottom: 16px; }
+.lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.lang-btn {
+  padding: 11px 14px;
+  border-radius: var(--r2);
+  font-family: var(--fs);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all .2s;
+  text-align: left;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  color: var(--text2);
+}
+.lang-btn:hover { border-color: var(--border2); color: var(--text1); }
+.lang-btn.active { border-color: rgba(200,255,87,.3); background: var(--lime-m); color: var(--lime); }
+.lang-btn-name { font-weight: 700; font-size: 0.83rem; }
+.lang-btn-native { font-size: 0.67rem; color: var(--text3); margin-top: 2px; }
+.lang-btn.active .lang-btn-native { color: rgba(200,255,87,.6); }
+.modal-note { margin-top: 12px; font-size: 0.68rem; color: var(--text3); font-family: var(--fm); }
+
+/* ── LEADERBOARD ── */
+.lb-list { display: flex; flex-direction: column; gap: 5px; }
+.lb-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--r1);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+.lb-rank { font-family: var(--fm); font-size: 0.65rem; font-weight: 700; width: 18px; text-align: center; }
+.lb-rank.gold { color: var(--amber); }
+.lb-rank.silver { color: var(--text2); }
+.lb-rank.bronze { color: #cd7f32; }
+.lb-name { flex: 1; font-size: 0.75rem; font-weight: 700; }
+.lb-score { font-family: var(--fm); font-size: 0.65rem; color: var(--lime); font-weight: 700; }
+.lb-entry.you { border-color: rgba(200,255,87,.25); background: rgba(200,255,87,.04); }
+
+/* Animations */
+@keyframes fadeUp { from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)} }
+@keyframes popIn { from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1} }
+
+/* Responsive */
+@media(max-width:900px){
+  .practice-view { flex-direction: column; }
+  .pv-right { width: 100%; }
+  .sidebar { width: 100%; }
+  .main-layout { flex-direction: column; }
+}
+@media(max-width:640px){
+  .topbar { padding: 0 14px; }
+  .tb-pills { display: none; }
+  .level-map, .practice-view { padding: 14px 14px 40px; }
+  .card-body { padding: 18px; }
+  .mc-inner { padding: 18px; }
+  .mic-zone { padding: 16px 14px; }
+  .metrics { grid-template-columns: 1fr; }
+  .pv-right { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+<div class="toast" id="toast"></div>
+
+<div class="shell">
+
+<!-- ══ TOPBAR ══ -->
+<nav class="topbar">
+  <a class="logo" href="#" onclick="goToMap(); return false;">
+    <div class="logo-mark">TL</div>
+    <span class="logo-text">TalkyLab</span>
+  </a>
+  <div class="tb-spacer"></div>
+  <div class="tb-pills">
+    <div class="tb-pill pill-mod">Pronunciation Studio</div>
+    <div class="tb-pill pill-lang" id="badgeLang">English</div>
+    <div class="tb-pill pill-xp" id="badgeXP">⚡ 0 XP</div>
+    <div class="tb-pill pill-streak" id="badgeStreak">🔥 0 streak</div>
+  </div>
+  <div class="tb-acts">
+    <button class="tb-btn" title="Toggle dark mode" onclick="goToMap()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="tb-btn" title="Change language" onclick="openLangPicker()">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M7.5 1.5c0 0-3 3-3 6s3 6 3 6m0-12c0 0 3 3 3 6s-3 6-3 6M1.5 7.5h12" stroke="currentColor" stroke-width="1.3"/></svg>
+    </button>
+    <button class="tb-btn" id="btnTimerMode" title="Timer Challenge Mode" onclick="toggleTimerMode()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="8" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M7 3V1M5 1h4M7 6v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- ══ VOICE BANNER ══ -->
+<div class="voice-banner">
+  <div class="vb-inner">
+    <div class="vb-dot loading" id="vbDot"></div>
+    <div class="vb-text" id="vbText">Detecting voice engine…</div>
+    <button class="btn-testvox" id="btnTestVoice" onclick="testVoice()" disabled>▶ Test</button>
+  </div>
+</div>
+
+<!-- ══ LEVEL MAP ══ -->
+<div class="level-map" id="levelMap">
+  <div class="lm-header">
+    <div class="lm-eyebrow">Pronunciation Studio</div>
+    <h1 class="lm-title">Master the art of<br><em>speaking clearly.</em></h1>
+    <p class="lm-sub">Complete 5 sentences per level. Finish all Easy levels to unlock Medium, then Hard.</p>
+  </div>
+  <div class="map-stats" id="mapStats"></div>
+  <div class="module-grid">
+    <!-- EASY -->
+    <div class="module-card easy" id="card-easy">
+      <div class="mc-stripe easy"></div>
+      <div class="mc-inner">
+        <div class="mc-top">
+          <div class="mc-info">
+            <div class="mc-icon-wrap easy">🌱</div>
+            <div>
+              <div class="mc-title easy">Easy</div>
+              <div class="mc-desc">Short sentences · Common words · Clear sounds</div>
+            </div>
+          </div>
+          <div class="mc-badge available" id="badge-easy">Available</div>
+        </div>
+        <div class="levels-row" id="dots-easy"></div>
+        <div class="mc-progress">
+          <div class="mc-prog-row">
+            <span class="mc-prog-lbl">Overall progress</span>
+            <span class="mc-prog-pct easy" id="pct-easy">0%</span>
+          </div>
+          <div class="mc-prog-track"><div class="mc-prog-fill easy" id="fill-easy" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+    <!-- MEDIUM -->
+    <div class="module-card medium" id="card-medium" style="position:relative">
+      <div class="mc-stripe medium"></div>
+      <div class="mc-inner">
+        <div class="mc-top">
+          <div class="mc-info">
+            <div class="mc-icon-wrap medium">⚡</div>
+            <div>
+              <div class="mc-title medium">Medium</div>
+              <div class="mc-desc">Longer sentences · Complex phonemes · Rhythm</div>
+            </div>
+          </div>
+          <div class="mc-badge locked" id="badge-medium">🔒 Locked</div>
+        </div>
+        <div class="levels-row" id="dots-medium"></div>
+        <div class="mc-progress">
+          <div class="mc-prog-row">
+            <span class="mc-prog-lbl">Overall progress</span>
+            <span class="mc-prog-pct medium" id="pct-medium">0%</span>
+          </div>
+          <div class="mc-prog-track"><div class="mc-prog-fill medium" id="fill-medium" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="mc-locked-overlay" id="overlay-medium">
+        <div class="lock-msg">
+          <div class="li">🔒</div>
+          <p>Complete <strong>all Easy levels</strong> to unlock</p>
+        </div>
+      </div>
+    </div>
+    <!-- HARD -->
+    <div class="module-card hard" id="card-hard" style="position:relative">
+      <div class="mc-stripe hard"></div>
+      <div class="mc-inner">
+        <div class="mc-top">
+          <div class="mc-info">
+            <div class="mc-icon-wrap hard">🔥</div>
+            <div>
+              <div class="mc-title hard">Hard</div>
+              <div class="mc-desc">Academic vocab · Multi-syllable words · Full fluency</div>
+            </div>
+          </div>
+          <div class="mc-badge locked" id="badge-hard">🔒 Locked</div>
+        </div>
+        <div class="levels-row" id="dots-hard"></div>
+        <div class="mc-progress">
+          <div class="mc-prog-row">
+            <span class="mc-prog-lbl">Overall progress</span>
+            <span class="mc-prog-pct hard" id="pct-hard">0%</span>
+          </div>
+          <div class="mc-prog-track"><div class="mc-prog-fill hard" id="fill-hard" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="mc-locked-overlay" id="overlay-hard">
+        <div class="lock-msg">
+          <div class="li">🔒</div>
+          <p>Complete <strong>all Medium levels</strong> to unlock</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PRACTICE VIEW ══ -->
+<div class="practice-view" id="practiceView">
+  <!-- LEFT -->
+  <div class="pv-left">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+      <span class="bc-crumb" onclick="goToMap()">Map</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-active" id="bcDiff">Easy</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-active" id="bcLevel">Level 1</span>
+    </div>
+
+    <!-- Sentence progress -->
+    <div class="sent-progress">
+      <div class="sp-header">
+        <span class="sp-title">Level Progress</span>
+        <span class="sp-fraction" id="spFraction">0 / 5</span>
+      </div>
+      <div class="sp-dots" id="spDots"></div>
+      <div class="sp-track"><div class="sp-fill" id="spFill" style="width:0%"></div></div>
+    </div>
+
+    <!-- Sentence card -->
+    <div class="sent-card" id="sentCard">
+      <div class="card-stripe" id="cardStripe"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="c-num" id="sentNum">SENTENCE 1 OF 5</span>
+          <span class="c-diff" id="sentDiff">Easy</span>
+          <div class="c-timer-badge" id="timerBadge" style="display:none">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.1"/><path d="M5.5 4.5v2.5M3.5 1h4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+            <span id="timerDisplay">30s</span>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:6px;">
+            <button class="btn-ctrl btn-bookmark" id="btnBookmark" onclick="toggleBookmark()" title="Save word to journal">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2h8v10L6 9 2 12V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="sent-text" id="sentText">Loading…</div>
+        <div class="phonetic" id="sentPhonetic"></div>
+        <div class="controls">
+          <button class="btn-ctrl btn-listen" id="btnListen" onclick="speakSentence(getCurSpeed())">
+            <div class="wb"><div class="wbl"></div><div class="wbl"></div><div class="wbl"></div><div class="wbl"></div><div class="wbl"></div></div>
+            Listen
+          </button>
+          <button class="btn-ctrl btn-slow" onclick="speakSentence(0.55)">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3.5v3l1.8 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Slow
+          </button>
+          <button class="btn-ctrl btn-hint" id="btnHint" onclick="showHint()">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M4.8 4.8a1.4 1.4 0 012.7.7c0 .9-1.4 1.4-1.4 2.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="9.2" r=".6" fill="currentColor"/></svg>
+            Hint
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hint box -->
+    <div class="hint-box" id="hintBox">
+      <div class="hint-head">
+        <div class="hint-ico">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2a3 3 0 013 3c0 1.1-.6 2-1.5 2.6V9H4.5V7.6A3 3 0 016 2z" stroke="#a78bfa" stroke-width="1.2"/><path d="M4.5 10.5h3" stroke="#a78bfa" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </div>
+        <span class="hint-title">Pronunciation Hint</span>
+      </div>
+      <div class="hint-text" id="hintText">—</div>
+    </div>
+
+    <!-- Timer bar -->
+    <div class="timer-bar" id="timerBar">
+      <div class="timer-fill" id="timerFill" style="width:100%"></div>
+    </div>
+
+    <!-- Mic zone -->
+    <div class="mic-zone" id="micZone">
+      <div class="no-speech-notice" id="noSpeechNotice">
+        <div class="nsn-text"><strong>🎤 Mic not available.</strong> Use Chrome on desktop/Android for speech recognition. You can still use Listen & Slow to practise.</div>
+      </div>
+      <div class="mic-label" id="micLabel">TAP THE MIC, THEN READ ALOUD</div>
+      <div class="mic-row">
+        <div class="mic-btn-wrap">
+          <button class="mic-btn" id="micBtn" onclick="toggleRec()">
+            <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+              <rect x="9" y="2" width="8" height="14" rx="4" fill="rgba(255,94,138,.8)"/>
+              <path d="M4 13a9 9 0 0018 0" stroke="rgba(255,94,138,.9)" stroke-width="1.7" stroke-linecap="round"/>
+              <path d="M13 22v3M10 25h6" stroke="rgba(255,94,138,.9)" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <div class="mic-ring mic-ring-1"></div>
+          <div class="mic-ring mic-ring-2"></div>
+        </div>
+        <div class="waveform" id="waveform">
+          <div class="wvb" style="height:6px"></div><div class="wvb" style="height:14px"></div>
+          <div class="wvb" style="height:24px"></div><div class="wvb" style="height:32px"></div>
+          <div class="wvb" style="height:24px"></div><div class="wvb" style="height:14px"></div>
+          <div class="wvb" style="height:6px"></div>
+        </div>
+      </div>
+      <div class="mic-status-row">
+        <div class="mic-dot" id="micDot"></div>
+        <div class="mic-status" id="micStatus">Press mic, then speak the sentence</div>
+      </div>
+      <div class="transcript-box" id="transcriptBox">
+        <span class="tx-ph">Your spoken words appear here…</span>
+      </div>
+      <div class="mic-extras">
+        <span class="extras-label">Speed:</span>
+        <div class="speed-btns">
+          <button class="spd-btn" data-speed="0.55" onclick="setSpeed(this)">0.5×</button>
+          <button class="spd-btn" data-speed="0.75" onclick="setSpeed(this)">0.75×</button>
+          <button class="spd-btn active" data-speed="1" onclick="setSpeed(this)">1×</button>
+          <button class="spd-btn" data-speed="1.25" onclick="setSpeed(this)">1.25×</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score panel -->
+    <div class="score-panel" id="scorePanel">
+      <div class="score-hdr">
+        <div class="score-left">
+          <div class="ring-wrap">
+            <svg class="ring-svg" width="76" height="76" viewBox="0 0 76 76">
+              <circle class="ring-bg" cx="38" cy="38" r="30"/>
+              <circle class="ring-fill" id="ringFill" cx="38" cy="38" r="30"/>
+            </svg>
+            <div class="ring-lbl" id="ringLbl">—</div>
+          </div>
+          <div>
+            <div class="score-grade" id="scoreGrade">—</div>
+            <div class="score-sub" id="scoreSub">Overall accuracy</div>
+          </div>
+        </div>
+        <div class="xp-badge" id="xpBadge">+0 XP</div>
+      </div>
+      <!-- Radar chart -->
+      <div class="radar-wrap">
+        <canvas id="radarCanvas" width="180" height="180"></canvas>
+      </div>
+      <div class="metrics">
+        <div class="metric-card"><div class="mc-lbl2">Pronunciation</div><div class="mc-val" id="mPron" style="color:var(--blue)">—</div><div class="mc-bar"><div class="mc-fill" id="mPronF" style="background:var(--blue)"></div></div></div>
+        <div class="metric-card"><div class="mc-lbl2">Fluency</div><div class="mc-val" id="mFlu" style="color:var(--purple)">—</div><div class="mc-bar"><div class="mc-fill" id="mFluF" style="background:var(--purple)"></div></div></div>
+        <div class="metric-card"><div class="mc-lbl2">Completeness</div><div class="mc-val" id="mComp" style="color:var(--amber)">—</div><div class="mc-bar"><div class="mc-fill" id="mCompF" style="background:var(--amber)"></div></div></div>
+        <div class="metric-card"><div class="mc-lbl2">Rhythm</div><div class="mc-val" id="mRhythm" style="color:var(--lime)">—</div><div class="mc-bar"><div class="mc-fill" id="mRhythmF" style="background:var(--lime)"></div></div></div>
+      </div>
+      <div class="chips-sec">
+        <div class="chips-lbl">Word-by-Word Feedback</div>
+        <div class="chips" id="chipsEl"></div>
+      </div>
+      <div class="ai-fb">
+        <div class="af-lbl">🤖 AI Tutor</div>
+        <div class="af-text" id="afText">—</div>
+      </div>
+      <div class="share-row">
+        <span class="share-lbl">SHARE:</span>
+        <button class="btn-share" onclick="shareScore()">Copy Score Card</button>
+        <button class="btn-share" onclick="shareToClipboard()">📋 Copy Text</button>
+      </div>
+      <div class="score-actions">
+        <button class="btn-retry" onclick="retrySentence()">↩ Retry</button>
+        <button class="btn-next" id="btnNext" onclick="nextSentence()">Next Sentence →</button>
+      </div>
+    </div>
+
+    <!-- Level complete -->
+    <div class="level-complete" id="levelComplete">
+      <div class="lc-emoji">🎉</div>
+      <div class="lc-title">Level <em id="lcNum">1</em> Complete!</div>
+      <div class="lc-sub" id="lcSub">All 5 sentences done!</div>
+      <div class="lc-stats" id="lcStats"></div>
+      <div class="lc-btns">
+        <button class="btn-next-level" id="btnNextLevel" onclick="advanceLevel()">Next Level →</button>
+        <button class="btn-back-map" onclick="goToMap()">Back to Map</button>
+      </div>
+    </div>
+
+    <!-- Module complete -->
+    <div class="level-complete" id="moduleComplete" style="border-color:rgba(200,255,87,.2)">
+      <div class="lc-emoji" style="font-size:3.8rem">🏆</div>
+      <div class="lc-title">Module <em id="mcDiffName">Easy</em> Complete!</div>
+      <div class="lc-sub" id="mcSub">You've mastered all levels!</div>
+      <div class="lc-stats" id="mcStats"></div>
+      <div class="lc-btns">
+        <button class="btn-next-level" onclick="goToMap()">Back to Map 🗺</button>
+      </div>
+    </div>
+
+  </div><!-- /pv-left -->
+
+  <!-- RIGHT SIDEBAR -->
+  <div class="pv-right">
+    <!-- Challenge mode -->
+    <div class="pv-right-card">
+      <div class="pvrc-head">Challenge Mode</div>
+      <div class="pvrc-body">
+        <div class="challenge-toggle" onclick="toggleTimerMode()" id="ctToggle">
+          <div>
+            <div class="ct-label">⏱ Timer Challenge</div>
+            <div class="ct-desc">30s per sentence</div>
+          </div>
+          <div class="toggle-switch" id="toggleSw"><div class="toggle-knob"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live phoneme analysis -->
+    <div class="pv-right-card">
+      <div class="pvrc-head">Phoneme Focus</div>
+      <div class="pvrc-body">
+        <div class="phoneme-grid" id="phonemeGrid"></div>
+        <div style="margin-top:10px;font-size:0.69rem;color:var(--text3);font-family:var(--fm);line-height:1.5;" id="phonemeDesc">Tap a phoneme to listen</div>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="pv-right-card">
+      <div class="pvrc-head">Pro Tips</div>
+      <div class="pvrc-body">
+        <div class="tip-list" id="tipList"></div>
+      </div>
+    </div>
+
+    <!-- Word Journal -->
+    <div class="pv-right-card">
+      <div class="pvrc-head">Word Journal <span class="sc-head-val" id="wjCount">0</span></div>
+      <div class="pvrc-body">
+        <div class="wj-list" id="wjList">
+          <div class="wj-empty">No words saved yet.<br>Bookmark sentences to track words.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="pv-right-card">
+      <div class="pvrc-head">This Session 🏅</div>
+      <div class="pvrc-body">
+        <div class="lb-list" id="lbList"></div>
+      </div>
+    </div>
+  </div>
+</div><!-- /practice-view -->
+
+<!-- ══ LANG MODAL ══ -->
+<div class="modal-bg" id="langModal">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div class="modal-title">🌐 Choose Language</div>
+      <button onclick="closeLangPicker()" style="background:transparent;border:none;color:var(--text2);cursor:pointer;font-size:1.3rem;padding:2px 8px">✕</button>
+    </div>
+    <div class="lang-grid" id="langGrid"></div>
+    <div class="modal-note">Changing language resets your current session.</div>
+  </div>
+</div>
+
+</div><!-- /shell -->
+
+<script>
+/* ══ LANGUAGE META ══ */
+const LANG_META = {
+  en:{label:'English',native:'English',latin:true,voiceTags:['en-IN','en-GB','en-US'],rv:'UK English Female',sample:'Hello, let us practise reading today.'},
+  hi:{label:'Hindi',native:'हिन्दी',latin:false,voiceTags:['hi-IN','hi'],rv:'Hindi Female',sample:'नमस्ते, आज हम पढ़ने का अभ्यास करेंगे।'},
+  mr:{label:'Marathi',native:'मराठी',latin:false,voiceTags:['mr-IN','mr'],rv:'Hindi Female',sample:'नमस्कार, आज आपण वाचनाचा सराव करूया.'},
+  ta:{label:'Tamil',native:'தமிழ்',latin:false,voiceTags:['ta-IN','ta'],rv:'Tamil Female',sample:'வணக்கம், இன்று படிக்கும் பயிற்சி செய்வோம்.'},
+  te:{label:'Telugu',native:'తెలుగు',latin:false,voiceTags:['te-IN','te'],rv:'Telugu Female',sample:'నమస్కారం, ఈ రోజు చదువు సాధన చేద్దాం.'},
+  kn:{label:'Kannada',native:'ಕನ್ನಡ',latin:false,voiceTags:['kn-IN','kn'],rv:'Kannada Female',sample:'ನಮಸ್ಕಾರ, ಇಂದು ಓದುವ ಅಭ್ಯಾಸ ಮಾಡೋಣ.'},
+  de:{label:'German',native:'Deutsch',latin:true,voiceTags:['de-DE','de'],rv:'Deutsch Female',sample:'Hallo, lass uns heute Lesen üben.'},
+  fr:{label:'French',native:'Français',latin:true,voiceTags:['fr-FR','fr'],rv:'French Female',sample:"Bonjour, pratiquons la lecture aujourd'hui."},
+};
+
+/* ══ DB ══ */
+const DB = {
+  en:{
+    easy:[
+      [{text:"The cat sat on the mat.",phonetic:"/ðə kæt sæt ɒn ðə mæt/",hint:"Short <strong>'a'</strong> rhymes in <em>cat, sat, mat</em> — say them all together!"},
+       {text:"I see a big red ball.",phonetic:"/aɪ siː ə bɪɡ rɛd bɔːl/",hint:"<strong>'See'</strong> = long-E. <strong>'Big'</strong> = short-I."},
+       {text:"The dog runs in the park.",phonetic:"/ðə dɒɡ rʌnz ɪn ðə pɑːk/",hint:"<strong>'Runs'</strong> ends with a 'z' sound."},
+       {text:"We like to play and sing.",phonetic:"/wiː laɪk tuː pleɪ ænd sɪŋ/",hint:"The <strong>'ng'</strong> in <em>sing</em> is nasal — no hard 'g'."},
+       {text:"Birds fly high in the sky.",phonetic:"/bɜːdz flaɪ haɪ ɪn ðə skaɪ/",hint:"Long-I in <strong>fly, high, sky</strong> — all rhyme!"}],
+      [{text:"The sun shines bright today.",phonetic:"/ðə sʌn ʃaɪnz braɪt təˈdeɪ/",hint:"<strong>'Shines'</strong> — the 'sh' is a single smooth sound."},
+       {text:"She bakes fresh bread every day.",phonetic:"/ʃiː beɪks frɛʃ brɛd ˈɛvrɪ deɪ/",hint:"<strong>'Bread'</strong> = BRED, short-e. <strong>'Every'</strong> = EV-ree."},
+       {text:"The children love to read books.",phonetic:"/ðə ˈtʃɪldrən lʌv tuː riːd bʊks/",hint:"<strong>'Children'</strong> = CHIL-dren. Soft 'ch' sound at the start."},
+       {text:"He drinks cold water after lunch.",phonetic:"/hiː drɪŋks kəʊld ˈwɔːtər ˈɑːftər lʌntʃ/",hint:"<strong>'Lunch'</strong> ends with 'ch'. <strong>'Water'</strong> — say the 't' lightly."},
+       {text:"A little fish lives in the pond.",phonetic:"/ə ˈlɪtl fɪʃ lɪvz ɪn ðə pɒnd/",hint:"<strong>'Little'</strong> = LI-tl — the second 't' is very light."}],
+      [{text:"The farmer grows rice and wheat.",phonetic:"/ðə ˈfɑːmər ɡrəʊz raɪs ænd wiːt/",hint:"<strong>'Grows'</strong> = long-O diphthong. <strong>'Wheat'</strong> = long-EE."},
+       {text:"My friend gave me a lovely gift.",phonetic:"/maɪ frɛnd ɡeɪv miː ə ˈlʌvlɪ ɡɪft/",hint:"<strong>'Lovely'</strong> = LUV-lee — the 'o' sounds like 'u'."},
+       {text:"The wind blows through the tall trees.",phonetic:"/ðə wɪnd bləʊz θruː ðə tɔːl triːz/",hint:"<strong>'Through'</strong> = THROO — silent 'ough'!"},
+       {text:"She wore a bright yellow dress.",phonetic:"/ʃiː wɔːr ə braɪt ˈjɛləʊ drɛs/",hint:"<strong>'Yellow'</strong> = YEL-oh. The 'y' starts with a glide."},
+       {text:"The stars appear at night.",phonetic:"/ðə stɑːz əˈpɪər æt naɪt/",hint:"<strong>'Appear'</strong> = uh-PEER — stress the second syllable."}],
+    ],
+    medium:[
+      [{text:"Knowledge is the foundation of wisdom.",phonetic:"/ˈnɒlɪdʒ ɪz ðə faʊnˈdeɪʃən əv ˈwɪzdəm/",hint:"The <strong>'k'</strong> in <em>knowledge</em> is silent! Stress foun-<strong>DA</strong>-tion."},
+       {text:"Practice makes every skill grow stronger.",phonetic:"/ˈpræktɪs meɪks ˈɛvrɪ skɪl ɡrəʊ ˈstrɒŋər/",hint:"Give weight to <strong>every</strong> and <strong>stronger</strong>. Nasal 'ng'."},
+       {text:"Honesty and kindness make the world better.",phonetic:"/ˈɒnɪstɪ ænd ˈkaɪndnɪs meɪk ðə wɜːld ˈbɛtər/",hint:"The <strong>'h'</strong> in <em>honesty</em> is silent! Say ON-es-tee."},
+       {text:"The curious monkey climbed the tall coconut tree.",phonetic:"/ðə ˈkjʊərɪəs ˈmʌŋkɪ klaɪmd ðə tɔːl ˈkəʊkənʌt triː/",hint:"<strong>Curious</strong> = KYOOR-ee-us (3 syllables)."},
+       {text:"Mountains and rivers define the beautiful landscape.",phonetic:"/ˈmaʊntɪnz ænd ˈrɪvərz dɪˈfaɪn ðə ˈbjuːtɪfʊl ˈlændskeɪp/",hint:"<strong>MOUNtains</strong> stress first syllable. <strong>Beautiful</strong> = BYOO-ti-ful."}],
+      [{text:"The ancient library contained thousands of manuscripts.",phonetic:"/ðiː ˈeɪnʃənt ˈlaɪbrərɪ kənˈteɪnd ˈθaʊzəndz əv ˈmænjʊskrɪpts/",hint:"<strong>'Ancient'</strong> = AYN-shunt. <strong>'Library'</strong> = LY-bruh-ree, not LY-berry!"},
+       {text:"Scientists discovered a new species in the rainforest.",phonetic:"/ˈsaɪəntɪsts dɪˈskʌvərd ə njuː ˈspiːʃɪz ɪn ðə ˈreɪnˌfɒrɪst/",hint:"<strong>'Species'</strong> = SPEE-sheez. Stress the second syllable of discovered."},
+       {text:"Children learn better through creative exploration.",phonetic:"/ˈtʃɪldrən lɜːn ˈbɛtər θruː kriˈeɪtɪv ˌɛkspləˈreɪʃən/",hint:"<strong>'Exploration'</strong> = ex-plo-RAY-shun (4 syllables)."},
+       {text:"The orchestra performed a beautiful symphony last night.",phonetic:"/ðiː ˈɔːkɪstrə pəˈfɔːmd ə ˈbjuːtɪfʊl ˈsɪmfənɪ lɑːst naɪt/",hint:"<strong>'Orchestra'</strong> = OR-kes-truh. <strong>'Symphony'</strong> = SIM-fuh-nee."},
+       {text:"Patience and perseverance lead to extraordinary results.",phonetic:"/ˈpeɪʃəns ænd ˌpɜːsɪˈvɪərəns liːd tuː ɪkˈstrɔːdnrɪ rɪˈzʌlts/",hint:"<strong>'Perseverance'</strong> = per-suh-VEER-ance. 5 syllables — break it first!"}],
+      [{text:"The volcano erupted with tremendous force and energy.",phonetic:"/ðə vɒlˈkeɪnəʊ ɪˈrʌptɪd wɪð trɪˈmɛndəs fɔːs ænd ˈɛnədʒɪ/",hint:"<strong>'Volcano'</strong> = vol-KAY-no. <strong>'Tremendous'</strong> = truh-MEN-dus."},
+       {text:"Governments must ensure equal opportunities for every citizen.",phonetic:"/ˈɡʌvənmənts mʌst ɪnˈʃɔːr ˈiːkwəl ˌɒpəˈtjuːnɪtɪz fər ˈɛvrɪ ˈsɪtɪzn/",hint:"<strong>'Opportunities'</strong> = op-er-TYOO-ni-teez (5 syllables)."},
+       {text:"The documentary explored the mysteries of the deep ocean.",phonetic:"/ðə ˌdɒkjʊˈmɛntərɪ ɪkˈsplɔːrd ðə ˈmɪstrɪz əv ðə diːp ˈəʊʃən/",hint:"<strong>'Documentary'</strong> = dok-yoo-MEN-tuh-ree (5 syllables)."},
+       {text:"Reading widely develops vocabulary and critical thinking.",phonetic:"/ˈriːdɪŋ ˈwaɪdlɪ dɪˈvɛləps vəˈkæbjʊlərɪ ænd ˈkrɪtɪkl ˈθɪŋkɪŋ/",hint:"<strong>'Vocabulary'</strong> = vo-KAB-yoo-lair-ee (5 syllables)."},
+       {text:"The festival celebrated traditions from many different cultures.",phonetic:"/ðə ˈfɛstɪvl ˈsɛlɪbreɪtɪd trəˈdɪʃənz frəm ˈmɛnɪ ˈdɪfrənt ˈkʌltʃərz/",hint:"<strong>'Traditions'</strong> = truh-DISH-uns. <strong>'Cultures'</strong> = KUL-cherz."}],
+    ],
+    hard:[
+      [{text:"The phenomenon of bioluminescence astonishes scientists worldwide.",phonetic:"/ðə fɪˈnɒmɪnən əv ˌbaɪəʊˌluːmɪˈnɛsəns əˈstɒnɪʃɪz ˈsaɪəntɪsts ˌwɜːldˈwaɪd/",hint:"<strong>Bioluminescence</strong> = bi-o-lu-mi-NES-cence (6 syllables). Take it phrase by phrase!"},
+       {text:"Philosophical contemplation enriches the human experience profoundly.",phonetic:"/ˌfɪləˈsɒfɪkəl ˌkɒntəmˈpleɪʃən ɪnˈrɪtʃɪz ðə ˈhjuːmən ɪkˈspɪərɪəns prəˈfaʊndlɪ/",hint:"<strong>Philosophical</strong> = fil-o-SOF-i-cal. <strong>Contemplation</strong> = con-tem-PLA-tion."},
+       {text:"Technological advancements revolutionize our daily communication patterns.",phonetic:"/ˌtɛknəˈlɒdʒɪkəl ədˈvɑːnsments ˌrɛvəˈluːʃənaɪz aʊər ˈdeɪlɪ kəˌmjuːnɪˈkeɪʃən ˈpætənz/",hint:"<strong>Tech-no-LOG-i-cal</strong>. <strong>Rev-o-LU-tion-ize</strong>. Break each long word first."},
+       {text:"The socioeconomic implications of urbanization require careful analysis.",phonetic:"/ðə ˌsəʊsɪəʊˌiːkəˈnɒmɪk ˌɪmplɪˈkeɪʃənz əv ˌɜːbənaɪˈzeɪʃən rɪˈkwaɪər ˈkeəfʊl əˈnælɪsɪs/",hint:"<strong>Socioeconomic</strong> = so-ci-o-ec-o-NOM-ic. Pause between clauses naturally."},
+       {text:"Unprecedented environmental challenges demand immediate collaborative solutions.",phonetic:"/ʌnˈprɛsɪdɛntɪd ɪnˌvaɪrənˈmɛntəl ˈtʃælɪndʒɪz dɪˈmɑːnd ɪˈmiːdɪɪt kəˈlæbərɪtɪv səˈluːʃənz/",hint:"<strong>Un-PREC-e-dent-ed</strong> — stress the second syllable. Pace yourself!"}],
+      [{text:"Neuroplasticity demonstrates the remarkable adaptability of the human brain.",phonetic:"/ˌnjʊərəʊplæˈstɪsɪtɪ ˈdɛmənstreɪts ðə rɪˈmɑːkəbl ˌædæptəˈbɪlɪtɪ əv ðə ˈhjuːmən breɪn/",hint:"<strong>Neuroplasticity</strong> = nyoo-ro-plas-TIS-i-tee (6 syllables)."},
+       {text:"The interdependence of global ecosystems highlights our shared responsibility.",phonetic:"/ðiː ˌɪntədɪˈpɛndəns əv ˈɡləʊbl ˈiːkəʊˌsɪstəmz ˈhaɪlaɪts aʊə ʃɛrd rɪˌspɒnsɪˈbɪlɪtɪ/",hint:"<strong>'Interdependence'</strong> = in-ter-de-PEN-dence (5 syllables)."},
+       {text:"Archaeological discoveries have transformed our understanding of ancient civilizations.",phonetic:"/ˌɑːkɪəˈlɒdʒɪkl dɪˈskʌvərɪz hæv trænsˈfɔːmd aʊər ˌʌndəˈstændɪŋ əv ˈeɪnʃənt ˌsɪvɪlaɪˈzeɪʃənz/",hint:"<strong>'Archaeological'</strong> = ar-kee-o-LOJ-i-kul (6 syllables)."},
+       {text:"Quantum mechanics fundamentally challenges classical notions of physical reality.",phonetic:"/ˈkwɒntəm mɪˈkænɪks ˌfʌndəˈmɛntlɪ ˈtʃælɪndʒɪz ˈklæsɪkl ˈnəʊʃənz əv ˈfɪzɪkl rɪˈælɪtɪ/",hint:"<strong>'Quantum'</strong> = KWON-tum. <strong>'Fundamentally'</strong> = fun-duh-MEN-tuh-lee (5 syllables)."},
+       {text:"The proliferation of misinformation undermines democratic institutions globally.",phonetic:"/ðə prəˌlɪfəˈreɪʃən əv ˌmɪsɪnfəˈmeɪʃən ˌʌndəˈmaɪnz ˌdɛməˈkrætɪk ˌɪnstɪˈtjuːʃənz ˈɡləʊbəlɪ/",hint:"<strong>'Proliferation'</strong> = pro-lif-er-AY-shun (5 syllables). Pause after misinformation."}],
+      [{text:"The epistemological foundations of scientific inquiry remain perpetually contested.",phonetic:"/ðiː ɪˌpɪstɪməˈlɒdʒɪkl faʊnˈdeɪʃənz əv ˌsaɪənˈtɪfɪk ɪnˈkwaɪərɪ rɪˈmeɪn pəˈpɛtʃʊəlɪ kənˈtɛstɪd/",hint:"<strong>'Epistemological'</strong> = eh-pis-tuh-mo-LOJ-i-kul (7 syllables)! Say it in chunks."},
+       {text:"Anthropological research reveals the extraordinary diversity of human cultural expression.",phonetic:"/ˌænθrəpəˈlɒdʒɪkl rɪˈsɜːtʃ rɪˈviːlz ðiː ɪkˈstrɔːdnrɪ daɪˈvɜːsɪtɪ əv ˈhjuːmən ˈkʌltʃərəl ɪkˈsprɛʃən/",hint:"<strong>'Anthropological'</strong> = an-thro-po-LOJ-i-kul. Break into four phrases."},
+       {text:"Geopolitical instabilities necessitate comprehensive multinational diplomatic strategies.",phonetic:"/ˌdʒiːəʊpəˈlɪtɪkl ɪnˌstæbɪˈlɪtɪz nɪˈsɛsɪteɪt ˌkɒmprɪˈhɛnsɪv ˌmʌltɪˈnæʃənl dɪˈplɒmætɪk ˈstrætɪdʒɪz/",hint:"<strong>'Geopolitical'</strong> = jee-o-po-LIT-i-kul. Pause after each major word cluster."},
+       {text:"The philosophical implications of artificial superintelligence challenge contemporary ethical frameworks.",phonetic:"/ðə ˌfɪləˈsɒfɪkl ˌɪmplɪˈkeɪʃənz əv ˌɑːtɪˈfɪʃəl ˌsuːpərɪnˈtɛlɪdʒəns ˈtʃælɪndʒ kənˈtɛmpərərɪ ˈɛθɪkl ˈfreɪmwɜːks/",hint:"Read in 3 clear phrases. <strong>'Superintelligence'</strong> = soo-per-in-TEL-i-jence."},
+       {text:"Psycholinguistic research demonstrates language acquisition as an innately human faculty.",phonetic:"/ˌsaɪkəʊlɪŋˈɡwɪstɪk rɪˈsɜːtʃ ˈdɛmənstreɪts ˈlæŋɡwɪdʒ ˌækwɪˈzɪʃən æz ən ɪˈneɪtlɪ ˈhjuːmən ˈfækəltɪ/",hint:"<strong>'Psycholinguistic'</strong> = sy-ko-ling-GWIS-tik. <strong>'Acquisition'</strong> = ak-wi-ZI-shun."}],
+    ],
+  },
+  hi:{
+    easy:[
+      [{text:"मेरा नाम राज है।",phonetic:"me-raa naam raaj hai",hint:"<strong>मेरा</strong> = me-RAA. Long 'aa' in नाम और राज — hold it slightly."},
+       {text:"आज मौसम बहुत अच्छा है।",phonetic:"aaj mau-sam ba-hut ach-chaa hai",hint:"<strong>अच्छा</strong> has doubled 'ch' — say firmly: ach-CHAA."},
+       {text:"मुझे दूध पीना पसंद है।",phonetic:"mu-jhe doodh pee-naa pa-sand hai",hint:"<strong>दूध</strong> = long 'oo' like 'food'."},
+       {text:"बच्चे बगीचे में खेलते हैं।",phonetic:"bach-che ba-gee-che mein khel-te hain",hint:"<strong>बच्चे</strong> = BACH-che — doubled consonant makes it sharp."},
+       {text:"सूरज हर रोज़ उगता है।",phonetic:"soo-raj har roz ug-taa hai",hint:"<strong>सूरज</strong> = SOO-raj, long 'oo'. ज़ (nukta) = 'z' sound."}],
+      [{text:"माँ खाना बना रही हैं।",phonetic:"maan khaa-naa ba-naa ra-hee hain",hint:"<strong>माँ</strong> — nasal 'n', hum it gently."},
+       {text:"मैं स्कूल जाता हूँ।",phonetic:"main skool jaa-taa hoon",hint:"<strong>स्कूल</strong> = SKOOL. The 'sk' is together with no vowel between."},
+       {text:"पानी पीना बहुत ज़रूरी है।",phonetic:"paa-nee pee-naa ba-hut za-roo-ree hai",hint:"<strong>ज़रूरी</strong> = za-ROO-ree. Dot on ज़ makes it 'z'."},
+       {text:"वह बहुत तेज़ दौड़ता है।",phonetic:"vah ba-hut tez daud-taa hai",hint:"<strong>दौड़ता</strong> = DAU-dtaa — 'au' diphthong then retroflex 'd'."},
+       {text:"फूल बगीचे में खिले हैं।",phonetic:"fool ba-gee-che mein khi-le hain",hint:"<strong>फूल</strong> = FOOL — long 'oo'. <strong>खिले</strong> = KHI-le, aspirated 'kh'."}],
+      [{text:"आसमान में तारे चमकते हैं।",phonetic:"aa-sa-maan mein taa-re cham-ka-te hain",hint:"<strong>चमकते</strong> = cham-KA-te (sparkle). Aspirated 'ch'."},
+       {text:"किताब पढ़ना अच्छी आदत है।",phonetic:"ki-taab padh-naa ach-chee aa-dat hai",hint:"<strong>पढ़ना</strong> = PADH-naa — retroflex 'dh', curl tongue!"},
+       {text:"बारिश के बाद इंद्रधनुष दिखता है।",phonetic:"baa-rish ke baad in-dra-dha-nush dikh-taa hai",hint:"<strong>इंद्रधनुष</strong> = in-dra-DHA-nush (rainbow) — 4 syllables."},
+       {text:"नदी का पानी बहुत साफ़ है।",phonetic:"na-dee kaa paa-nee ba-hut saaf hai",hint:"<strong>साफ़</strong> = SAAF — dot on फ़ = 'f' sound, not 'ph'."},
+       {text:"पक्षी पेड़ पर बैठे हैं।",phonetic:"pak-shee ped par bai-the hain",hint:"<strong>पक्षी</strong> = PAK-shee (bird) — 'ksh' cluster."}],
+    ],
+    medium:[
+      [{text:"शिक्षा जीवन का सबसे बड़ा उपहार है।",phonetic:"shik-shaa jee-van kaa sab-se ba-daa u-pa-haar hai",hint:"<strong>शिक्षा</strong> = shik-SHAA. <strong>उपहार</strong> = u-pa-HAAR (gift)."},
+       {text:"परिश्रम से हर लक्ष्य प्राप्त किया जा सकता है।",phonetic:"pa-ri-shram se har lak-shya prapt ki-yaa jaa sak-taa hai",hint:"<strong>लक्ष्य</strong> = LAK-shya — the 'shya' blend."},
+       {text:"भारत विविधता में एकता का देश है।",phonetic:"bhaa-rat vi-vi-dha-taa mein ek-taa kaa desh hai",hint:"<strong>विविधता</strong> = vi-vi-DHA-taa. <strong>एकता</strong> = EK-taa."},
+       {text:"नदियाँ और पहाड़ प्रकृति की सुंदरता हैं।",phonetic:"na-di-yaan aur pa-haa-d pra-kri-ti kee sun-da-ra-taa hain",hint:"<strong>नदियाँ</strong> has a nasal ending. <strong>प्रकृति</strong> = pra-KRI-ti."},
+       {text:"ईमानदारी और मेहनत से सफलता मिलती है।",phonetic:"ee-maan-daa-ree aur meh-nat se sa-fa-la-taa mil-tee hai",hint:"<strong>ईमानदारी</strong> = ee-MAAN-daa-ree (5 syllables)."}],
+      [{text:"विज्ञान और तकनीक ने जीवन बदल दिया है।",phonetic:"vi-dnyaan aur tak-neek ne jee-van ba-dal di-yaa hai",hint:"<strong>विज्ञान</strong> = vi-DNYAAN — 'gn' becomes 'dny'."},
+       {text:"पर्यावरण की रक्षा करना हमारी ज़िम्मेदारी है।",phonetic:"par-yaa-va-ran kee rak-shaa kar-naa ha-maa-ree zim-me-daa-ree hai",hint:"<strong>पर्यावरण</strong> = par-yaa-VA-ran. <strong>ज़िम्मेदारी</strong> = zim-me-DAA-ree."},
+       {text:"अच्छी पुस्तकें पढ़ने से ज्ञान बढ़ता है।",phonetic:"ach-chee pus-ta-ken padh-ne se dnyaan badh-taa hai",hint:"<strong>ज्ञान</strong> = DNYAAN — begins with 'dn' not plain 'g'."},
+       {text:"स्वास्थ्य ही सबसे बड़ा धन माना जाता है।",phonetic:"svaas-thya hee sab-se ba-daa dhan maa-naa jaa-taa hai",hint:"<strong>स्वास्थ्य</strong> = SVAAS-thya — 'sva' cluster, 'th' dental."},
+       {text:"मिलकर काम करने से सफलता जल्दी मिलती है।",phonetic:"mil-kar kaam kar-ne se sa-fa-la-taa jal-dee mil-tee hai",hint:"Breathe after <strong>करने से</strong> — two natural phrases."}],
+      [{text:"लोकतंत्र में प्रत्येक नागरिक का मतदान अनिवार्य कर्तव्य है।",phonetic:"lo-ka-tan-tra mein prat-yek naa-ga-rik kaa mat-daan a-ni-vaar-ya kar-ta-vya hai",hint:"<strong>लोकतंत्र</strong> = lo-ka-TAN-tra (democracy). <strong>अनिवार्य</strong> = a-ni-VAAR-ya."},
+       {text:"पर्यावरण संरक्षण आज की सबसे बड़ी चुनौती है।",phonetic:"par-yaa-va-ran san-rak-shan aaj kee sab-se ba-dee chu-nau-tee hai",hint:"<strong>संरक्षण</strong> = san-RAK-shan. <strong>चुनौती</strong> = chu-NAU-tee."},
+       {text:"वैज्ञानिक अनुसंधान से मानवजाति का विकास होता है।",phonetic:"vaig-gyaa-nik a-nu-san-dhaan se maa-nav-jaa-ti kaa vi-kaas ho-taa hai",hint:"<strong>वैज्ञानिक</strong> = vaig-GYAA-nik. <strong>अनुसंधान</strong> = a-nu-san-DHAAN."},
+       {text:"सामाजिक न्याय और समानता एक स्वस्थ समाज की नींव है।",phonetic:"saa-maa-jik nyaa-ya aur sa-maa-na-taa ek svas-tha sa-maaj kee neenv hai",hint:"<strong>न्याय</strong> = NYAA-ya. The 'ny' like Spanish 'ñ'."},
+       {text:"आर्थिक असमानता से सामाजिक विषमता उत्पन्न होती है।",phonetic:"aar-thik a-sa-maa-na-taa se saa-maa-jik vi-sha-ma-taa ut-pan-na ho-tee hai",hint:"<strong>आर्थिक</strong> = AAR-thik. <strong>विषमता</strong> = vi-SHA-ma-taa. Read clause by clause."}],
+    ],
+    hard:[
+      [{text:"लोकतांत्रिक व्यवस्था में मूलभूत अधिकारों की रक्षा सर्वोपरि है।",phonetic:"lo-kaa-taan-trik vya-va-sthaa mein mool-bhoot a-dhi-kaa-ron kee rak-shaa sar-vo-pa-ri hai",hint:"<strong>सर्वोपरि</strong> = sar-VO-pa-ri (supreme). Read in three natural phrases."},
+       {text:"वैश्वीकरण के कारण सांस्कृतिक विविधता को नई चुनौतियाँ मिल रही हैं।",phonetic:"vaish-vee-ka-ran ke kaa-ran saans-kri-tik vi-vi-dha-taa ko na-ee chu-nau-ti-yaan mil ra-hee hain",hint:"<strong>वैश्वीकरण</strong> = vaish-vee-KA-ran (globalization). Long sentence — pause at कारण."},
+       {text:"सतत विकास के लिए प्राकृतिक संसाधनों का संरक्षण आवश्यक है।",phonetic:"sa-tat vi-kaas ke li-e praa-kri-tik san-saa-dha-non kaa san-rak-shan aa-vash-yak hai",hint:"<strong>प्राकृतिक</strong> = praa-KRI-tik. <strong>आवश्यक</strong> = aa-VASH-yak (necessary)."},
+       {text:"आधुनिक तकनीकी प्रगति ने शिक्षा के क्षेत्र में क्रांतिकारी बदलाव किया है।",phonetic:"aa-dhu-nik tak-nee-kee pra-ga-ti ne shik-shaa ke ksheet-ra mein kraan-ti-kaa-ree ba-da-laav ki-yaa hai",hint:"<strong>क्रांतिकारी</strong> = kraan-ti-KAA-ree (revolutionary). Pause after क्षेत्र में."},
+       {text:"मानवाधिकारों की सार्वभौमिक घोषणा विश्व इतिहास का एक महत्त्वपूर्ण दस्तावेज़ है।",phonetic:"maa-nav-a-dhi-kaa-ron kee saar-va-bhau-mik gho-sha-naa vi-shva i-ti-haas kaa ek ma-hat-tva-poor-na das-taa-vez hai",hint:"<strong>सार्वभौमिक</strong> = saar-va-BHAU-mik (universal). Read as 4 clear phrases."}],
+      [{text:"संविधान के अनुच्छेद में प्रतिष्ठित मौलिक अधिकार अपरिहार्य हैं।",phonetic:"san-vi-dhaan ke a-nu-chhed mein pra-tish-thit mau-lik a-dhi-kaar a-pa-ri-haar-ya hain",hint:"<strong>अपरिहार्य</strong> = a-pa-ri-HAAR-ya (indispensable). Break the long words first."},
+       {text:"नवीकरणीय ऊर्जा स्रोतों का विकास पर्यावरणीय संतुलन के लिए अनिवार्य है।",phonetic:"na-vee-ka-ra-nee-ya oor-jaa sro-ton kaa vi-kaas par-yaa-var-na-nee-ya san-tu-lan ke li-e a-ni-vaar-ya hai",hint:"<strong>नवीकरणीय</strong> = na-vee-ka-ra-NEE-ya (renewable). Pause after स्रोतों का विकास."},
+       {text:"बहुआयामी समस्याओं के समाधान के लिए अंतःविषयक दृष्टिकोण आवश्यक है।",phonetic:"ba-hu-aa-yaa-mee sam-sya-on ke sa-maa-dhaan ke li-e an-tah-vi-sha-yak drish-ti-kon aa-vash-yak hai",hint:"<strong>अंतःविषयक</strong> = an-tah-VI-sha-yak (interdisciplinary). Hardest word — isolate it!"},
+       {text:"वैश्विक महामारी ने सार्वजनिक स्वास्थ्य प्रणाली की कमज़ोरियाँ उजागर कर दीं।",phonetic:"vaish-vik ma-haa-maa-ree ne saar-va-ja-nik svaas-thya pra-naa-lee kee kam-zo-ri-yaan u-jaa-gar kar deen",hint:"<strong>सार्वजनिक</strong> = saar-VA-ja-nik. <strong>कमज़ोरियाँ</strong> = kam-zo-RI-yaan. Read in 3 phrases."},
+       {text:"भाषाई विविधता किसी राष्ट्र की सांस्कृतिक समृद्धि का प्रतीक होती है।",phonetic:"bhaa-shaa-ee vi-vi-dha-taa ki-see raash-tra kee saans-kri-tik sam-rid-dhi kaa pra-teek ho-tee hai",hint:"<strong>भाषाई</strong> = bhaa-SHAA-ee (linguistic). <strong>समृद्धि</strong> = sa-MRID-dhi (prosperity)."}],
+      [{text:"संज्ञानात्मक विज्ञान ने मानवीय चेतना की अपरिमेय जटिलता को उजागर किया है।",phonetic:"san-dnyaa-naat-mak vi-dnyaan ne maa-na-vee-ya che-ta-naa kee a-pa-ri-mey ja-ti-la-taa ko u-jaa-gar ki-yaa hai",hint:"<strong>संज्ञानात्मक</strong> = san-dnyaa-NAAT-mak (cognitive). Extremely advanced — breathe between clauses!"},
+       {text:"प्रतिनिधिमूलक लोकतंत्र में जनमत संग्रह की महत्ता असंदिग्ध है।",phonetic:"pra-ti-ni-dhi-moo-lak lo-ka-tan-tra mein jan-mat san-gra-ha kee ma-hat-taa a-san-dig-dha hai",hint:"<strong>प्रतिनिधिमूलक</strong> = pra-ti-ni-dhi-MOO-lak (representative). 6 syllables — say slowly."},
+       {text:"अंतर्राष्ट्रीय कूटनीतिक वार्ताओं में सांस्कृतिक संवेदनशीलता की भूमिका अपरिहार्य है।",phonetic:"an-tar-raash-tree-ya koot-nee-tik vaar-taa-on mein saans-kri-tik san-ve-da-na-shee-la-taa kee bhoo-mi-kaa a-pa-ri-haar-ya hai",hint:"<strong>सांस्कृतिक संवेदनशीलता</strong> = cultural sensitivity. Split: सांस्कृतिक | संवेदनशीलता."},
+       {text:"वैश्वीकरण के दौर में राष्ट्रीय पहचान और सार्वभौमिक मानवीय मूल्यों में संतुलन अनिवार्य है।",phonetic:"vaish-vee-ka-ran ke daur mein raash-tree-ya pa-ha-chaan aur saar-va-bhau-mik maa-na-vee-ya mool-yon mein san-tu-lan a-ni-vaar-ya hai",hint:"Very long — read in 4 phrases."},
+       {text:"बौद्धिक संपदा अधिकारों और ज्ञान की स्वतंत्र पहुँच के बीच संतुलन स्थापित करना एक जटिल चुनौती है।",phonetic:"baud-dhik san-pa-daa a-dhi-kaa-ron aur dnyaan kee sva-tan-tra pa-hunch ke beech san-tu-lan sthaa-pit kar-naa ek ja-til chu-nau-tee hai",hint:"<strong>बौद्धिक संपदा</strong> = intellectual property. Read in 5 shorter chunks."}],
+    ],
+  },
+};
+
+/* ══ APP STATE ══ */
+let LANG = localStorage.getItem('pron_lang') || 'en';
+let META = LANG_META[LANG];
+let state = JSON.parse(localStorage.getItem('pron_state2') || 'null') || buildInitialState();
+let totalXP = parseInt(localStorage.getItem('pron_xp2') || '0');
+let streak = parseInt(localStorage.getItem('pron_streak') || '0');
+let lastPracticeDay = localStorage.getItem('pron_last_day') || '';
+let wordJournal = JSON.parse(localStorage.getItem('pron_journal') || '[]');
+let heatmap = JSON.parse(localStorage.getItem('pron_heatmap') || '{}');
+let sessionScores = [];
+let achievements = JSON.parse(localStorage.getItem('pron_ach') || '[]');
+
+let activeDiff = null, activeLevel = null, activeSentIdx = 0;
+let levelScores = [], sentState = [];
+let recognition = null, isRecording = false, lastTranscript = '';
+let hintUsed = false, curSpeed = 1;
+let voiceReady = false, voiceMethod = 'none', activeVoice = null;
+let wordTimer = null;
+let timerMode = false, timerInterval = null, timerLeft = 30;
+let bookmarkedSentences = new Set(JSON.parse(localStorage.getItem('pron_bookmarks') || '[]'));
+let skillStats = JSON.parse(localStorage.getItem('pron_skills') || '{"pronunciation":0,"fluency":0,"completeness":0,"rhythm":0,"attempts":0}');
+
+function buildInitialState() {
+  const s = {};
+  ['easy','medium','hard'].forEach(d => {
+    s[d] = [];
+    for(let i = 0; i < 3; i++) s[d].push({done: false, scores: []});
+  });
+  return s;
+}
+function getDB(diff) { return (DB[LANG] || DB.en)[diff]; }
+function saveState() {
+  localStorage.setItem('pron_state2', JSON.stringify(state));
+  localStorage.setItem('pron_xp2', totalXP);
+  localStorage.setItem('pron_streak', streak);
+  localStorage.setItem('pron_last_day', lastPracticeDay);
+  localStorage.setItem('pron_journal', JSON.stringify(wordJournal));
+  localStorage.setItem('pron_heatmap', JSON.stringify(heatmap));
+  localStorage.setItem('pron_ach', JSON.stringify(achievements));
+  localStorage.setItem('pron_bookmarks', JSON.stringify([...bookmarkedSentences]));
+  localStorage.setItem('pron_skills', JSON.stringify(skillStats));
+}
+
+/* ── STREAK ── */
+function updateStreak() {
+  const today = new Date().toDateString();
+  if(lastPracticeDay !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    if(lastPracticeDay === yesterday) streak++;
+    else if(lastPracticeDay !== today) streak = 1;
+    lastPracticeDay = today;
+    // update heatmap
+    const key = new Date().toISOString().split('T')[0];
+    heatmap[key] = (heatmap[key] || 0) + 1;
+  }
+  document.getElementById('badgeStreak').textContent = '🔥 ' + streak + ' streak';
+}
+
+/* ── UNLOCK ── */
+function isDiffUnlocked(diff) {
+  if(diff === 'easy') return true;
+  if(diff === 'medium') return isAllDone('easy');
+  if(diff === 'hard') return isAllDone('medium');
+}
+function isAllDone(diff) { return state[diff].every(l => l.done); }
+function isLevelUnlocked(diff, idx) {
+  if(!isDiffUnlocked(diff)) return false;
+  if(idx === 0) return true;
+  return state[diff][idx-1].done;
+}
+
+/* ── ACHIEVEMENTS ── */
+const ACH_DEF = [
+  {id:'first', icon:'🌟', name:'First Word', desc:'Complete your first sentence'},
+  {id:'perfect', icon:'💎', name:'Perfect Score', desc:'Score 100% on a sentence'},
+  {id:'streak3', icon:'🔥', name:'On Fire', desc:'3-day practice streak'},
+  {id:'words50', icon:'📚', name:'Word Collector', desc:'Add 5 words to journal'},
+  {id:'easydone', icon:'🌱', name:'Easy Ace', desc:'Complete all Easy levels'},
+  {id:'mediumdone', icon:'⚡', name:'Power Speaker', desc:'Complete all Medium levels'},
+  {id:'harddone', icon:'🏆', name:'Master Speaker', desc:'Complete all Hard levels'},
+  {id:'speedrun', icon:'⚡', name:'Speed Demon', desc:'Score 80%+ in Timer mode'},
+];
+function checkAchievements(data) {
+  const earned = [];
+  if(!achievements.includes('first')) { achievements.push('first'); earned.push('first'); }
+  if(data && data.overall === 100 && !achievements.includes('perfect')) { achievements.push('perfect'); earned.push('perfect'); }
+  if(streak >= 3 && !achievements.includes('streak3')) { achievements.push('streak3'); earned.push('streak3'); }
+  if(wordJournal.length >= 5 && !achievements.includes('words50')) { achievements.push('words50'); earned.push('words50'); }
+  if(isAllDone('easy') && !achievements.includes('easydone')) { achievements.push('easydone'); earned.push('easydone'); }
+  if(isAllDone('medium') && !achievements.includes('mediumdone')) { achievements.push('mediumdone'); earned.push('mediumdone'); }
+  if(isAllDone('hard') && !achievements.includes('harddone')) { achievements.push('harddone'); earned.push('harddone'); }
+  if(data && timerMode && data.overall >= 80 && !achievements.includes('speedrun')) { achievements.push('speedrun'); earned.push('speedrun'); }
+  earned.forEach(id => {
+    const a = ACH_DEF.find(x => x.id === id);
+    if(a) setTimeout(() => toast(a.icon + ' Achievement unlocked: ' + a.name + '!'), 1200);
+  });
+}
+
+/* ══ TTS ENGINE ══ */
+async function detectWebSpeechVoice(lang) {
+  return new Promise(resolve => {
+    if(!window.speechSynthesis) { resolve(null); return; }
+    const tryMatch = () => {
+      const voices = speechSynthesis.getVoices();
+      if(!voices.length) { resolve(null); return; }
+      const tags = LANG_META[lang].voiceTags;
+      for(const tag of tags) {
+        let v = voices.find(v => v.lang === tag);
+        if(v) { resolve(v); return; }
+        v = voices.find(v => v.lang.toLowerCase().startsWith(tag.split('-')[0]+'-'));
+        if(v) { resolve(v); return; }
+      }
+      resolve(null);
+    };
+    if(speechSynthesis.getVoices().length > 0) tryMatch();
+    else { speechSynthesis.addEventListener('voiceschanged', () => tryMatch(), {once:true}); setTimeout(tryMatch, 2200); }
+  });
+}
+async function initTTS(lang) {
+  setBanner('loading', 'Detecting voice…');
+  document.getElementById('btnTestVoice').disabled = true;
+  activeVoice = null; voiceMethod = 'none'; voiceReady = false;
+  const wsVoice = await detectWebSpeechVoice(lang);
+  if(wsVoice) {
+    activeVoice = wsVoice; voiceMethod = 'webspeech'; voiceReady = true;
+    const nm = wsVoice.name.length > 38 ? wsVoice.name.slice(0,38)+'…' : wsVoice.name;
+    setBanner('ok', 'Voice ready — <strong>' + nm + '</strong>');
+    document.getElementById('btnTestVoice').disabled = false;
+    return;
+  }
+  const rvName = LANG_META[lang].rv;
+  if(typeof responsiveVoice !== 'undefined' && responsiveVoice.voiceSupport()) {
+    activeVoice = rvName; voiceMethod = 'rv'; voiceReady = true;
+    setBanner('ok', 'Voice ready — <strong>' + rvName + '</strong> (ResponsiveVoice)');
+    document.getElementById('btnTestVoice').disabled = false;
+    return;
+  }
+  voiceReady = false;
+  setBanner('warn', 'No voice found. Install language packs in Chrome.');
+}
+function setBanner(st, html) {
+  document.getElementById('vbDot').className = 'vb-dot ' + st;
+  document.getElementById('vbText').innerHTML = html;
+}
+function testVoice() { speakText(META.sample, 1, true); }
+
+function speakText(text, rate, isTest=false) {
+  stopTTS();
+  if(!voiceReady) { toast('⚠ No voice available — see banner.'); return; }
+  if(voiceMethod === 'webspeech') {
+    const u = new SpeechSynthesisUtterance(text);
+    u.voice = activeVoice; u.rate = Math.max(0.1, Math.min(2, rate||1)); u.pitch = 1; u.volume = 1;
+    let wi = 0, bf = false;
+    u.onboundary = e => { if(e.name !== 'word') return; bf = true; stopWordTimer(); if(!isTest) hlWord(wi++); };
+    u.onstart = () => { setTTSState(true); if(!bf && !isTest) startWordTimer(text, rate||1); };
+    u.onend = () => { stopWordTimer(); setTTSState(false); clearWordHl(); };
+    u.onerror = e => { stopWordTimer(); setTTSState(false); clearWordHl(); if(e.error !== 'interrupted') toast('TTS error: '+e.error); };
+    setTimeout(() => speechSynthesis.speak(u), 60);
+  } else if(voiceMethod === 'rv') {
+    setTTSState(true);
+    if(!isTest) startWordTimer(text, rate||1);
+    responsiveVoice.speak(text, activeVoice, {
+      rate: Math.max(0.1, Math.min(2, rate||1)), pitch:1, volume:1,
+      onstart: () => setTTSState(true),
+      onend: () => { stopWordTimer(); setTTSState(false); clearWordHl(); },
+      onerror: () => { stopWordTimer(); setTTSState(false); clearWordHl(); }
+    });
+  }
+}
+function stopTTS() {
+  if(window.speechSynthesis) speechSynthesis.cancel();
+  if(typeof responsiveVoice !== 'undefined') responsiveVoice.cancel();
+  stopWordTimer(); setTTSState(false); clearWordHl();
+}
+function speakSentence(rate) {
+  const level = getDB(activeDiff)[activeLevel];
+  if(!level) return;
+  speakText(level[activeSentIdx].text, rate);
+}
+function startWordTimer(text, rate) {
+  stopWordTimer();
+  const words = text.split(' ');
+  const wpm = rate < 0.7 ? 80 : rate < 1 ? 110 : 150;
+  const ms = (60/wpm)*1000;
+  let wi = 0;
+  const delay = setTimeout(() => {
+    const iv = setInterval(() => { if(wi >= words.length) { clearInterval(iv); clearWordHl(); return; } hlWord(wi++); }, ms);
+    wordTimer = {iv, delay:null};
+  }, 300);
+  wordTimer = {iv:null, delay};
+}
+function stopWordTimer() { if(!wordTimer) return; clearInterval(wordTimer.iv); clearTimeout(wordTimer.delay); wordTimer = null; }
+function setTTSState(on) { document.getElementById('btnListen').classList.toggle('speaking', on); }
+function hlWord(idx) {
+  document.querySelectorAll('.word').forEach(w => w.classList.remove('active'));
+  const el = document.getElementById('w'+idx);
+  if(el) { el.classList.add('active'); el.classList.remove('pending'); }
+}
+function clearWordHl() { document.querySelectorAll('.word').forEach(w => w.classList.remove('active')); }
+
+/* ══ SPEECH RECOGNITION ══ */
+function initSR() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) {
+    recognition = null;
+    document.getElementById('noSpeechNotice').classList.add('show');
+    document.getElementById('micBtn').classList.add('disabled-btn');
+    return;
+  }
+  document.getElementById('noSpeechNotice').classList.remove('show');
+  recognition = new SR();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.lang = META.voiceTags[0];
+  recognition.onstart = () => {
+    isRecording = true;
+    document.getElementById('micBtn').classList.add('active');
+    document.getElementById('waveform').classList.add('active');
+    document.getElementById('sentCard').classList.add('state-recording');
+    document.getElementById('micLabel').textContent = 'LISTENING…';
+    document.getElementById('micDot').classList.add('rec');
+    document.getElementById('micStatus').textContent = '● Recording — speak clearly';
+    document.getElementById('micStatus').className = 'mic-status rec';
+    animateWave(true);
+  };
+  recognition.onresult = e => {
+    let interim = '', final = '';
+    for(let i = e.resultIndex; i < e.results.length; i++) {
+      if(e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    lastTranscript = final || interim;
+    const box = document.getElementById('transcriptBox');
+    box.textContent = (final || interim).trim();
+    box.classList.add('has');
+    hlSpoken(lastTranscript);
+  };
+  recognition.onerror = e => {
+    if(e.error === 'no-speech') toast('No speech detected — try speaking louder!');
+    else if(e.error === 'not-allowed') toast('Microphone denied. Please allow mic access.');
+    else toast('Recognition error: '+e.error);
+    stopTimerCountdown();
+    resetMicUI();
+  };
+  recognition.onend = () => {
+    if(!isRecording) return;
+    isRecording = false;
+    document.getElementById('micBtn').classList.remove('active');
+    document.getElementById('waveform').classList.remove('active');
+    document.getElementById('sentCard').classList.remove('state-recording');
+    document.getElementById('micLabel').textContent = 'TAP THE MIC, THEN READ ALOUD';
+    document.getElementById('micDot').classList.remove('rec');
+    document.getElementById('micStatus').textContent = '✓ Processing…';
+    document.getElementById('micStatus').className = 'mic-status done';
+    animateWave(false);
+    stopTimerCountdown();
+    setTimeout(() => scoreAttempt(lastTranscript), 700);
+  };
+}
+function updateSRLang() { if(recognition) recognition.lang = META.voiceTags[0]; }
+
+function toggleRec() {
+  if(!recognition) { toast('⚠ Speech recognition requires Chrome browser.'); return; }
+  if(isRecording) {
+    isRecording = false;
+    try { recognition.stop(); } catch(e) {}
+    stopTimerCountdown();
+  } else {
+    lastTranscript = '';
+    document.getElementById('transcriptBox').innerHTML = '<span class="tx-ph">Listening…</span>';
+    document.getElementById('transcriptBox').classList.remove('has');
+    document.getElementById('scorePanel').classList.remove('show');
+    if(timerMode) startTimerCountdown();
+    try {
+      recognition.start();
+    } catch(e) {
+      try { recognition.stop(); } catch(e2) {}
+      setTimeout(() => { try { recognition.start(); } catch(e3) { toast('Mic error — tap again.'); } }, 400);
+    }
+  }
+}
+
+/* ── TIMER CHALLENGE ── */
+function toggleTimerMode() {
+  timerMode = !timerMode;
+  const sw = document.getElementById('toggleSw');
+  const tb = document.getElementById('btnTimerMode');
+  sw.classList.toggle('on', timerMode);
+  tb.classList.toggle('active', timerMode);
+  document.getElementById('timerBadge').style.display = timerMode ? 'flex' : 'none';
+  document.getElementById('timerBar').classList.toggle('show', timerMode);
+  toast(timerMode ? '⏱ Timer Challenge ON — 30s per sentence' : '⏱ Timer Challenge OFF');
+}
+function startTimerCountdown() {
+  timerLeft = 30;
+  updateTimerUI();
+  timerInterval = setInterval(() => {
+    timerLeft--;
+    updateTimerUI();
+    if(timerLeft <= 0) {
+      clearInterval(timerInterval);
+      if(isRecording) {
+        isRecording = false;
+        try { recognition.stop(); } catch(e) {}
+      } else {
+        scoreAttempt(lastTranscript);
+      }
+      toast("⏱ Time's up!");
+    }
+  }, 1000);
+}
+function stopTimerCountdown() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  updateTimerUI();
+}
+function updateTimerUI() {
+  document.getElementById('timerDisplay').textContent = timerLeft + 's';
+  const pct = (timerLeft / 30) * 100;
+  const fill = document.getElementById('timerFill');
+  fill.style.width = pct + '%';
+  fill.className = 'timer-fill' + (timerLeft <= 10 ? ' urgent' : timerLeft <= 20 ? ' warn' : '');
+  document.getElementById('timerDisplay').parentElement.className = 'c-timer-badge' + (timerLeft <= 10 ? ' running' : '');
+}
+
+function hlSpoken(spoken) {
+  const level = getDB(activeDiff)[activeLevel];
+  if(!level) return;
+  const tw = level[activeSentIdx].text.split(' ');
+  const sw = spoken.toLowerCase().replace(/[।,.!?]/g,'').split(' ');
+  tw.forEach((w, i) => {
+    const el = document.getElementById('w'+i); if(!el) return;
+    const c = w.replace(/[।,.!?。]/g,'').toLowerCase();
+    const found = sw.some(s => sim(s, c) > 0.65);
+    el.classList.remove('pending','correct','wrong','spoken','active');
+    if(found) el.classList.add('spoken');
+  });
+}
+
+/* ══ SCORING ══ */
+function scoreAttempt(transcript) {
+  if(!transcript.trim()) { toast('Nothing detected — speak louder!'); resetMicUI(); return; }
+  const level = getDB(activeDiff)[activeLevel];
+  const s = level[activeSentIdx];
+  const targetRaw = s.text.split(' ');
+  const spokenRaw = transcript.replace(/[।,.!?。،]/g,'').split(' ');
+  let correct = 0;
+  const wordResults = targetRaw.map((tw, i) => {
+    const clean = tw.replace(/[।,.!?。،]/g,'').toLowerCase();
+    let bestSim = 0, bestSpoken = '';
+    spokenRaw.forEach(sw => { const v = sim(sw.toLowerCase(), clean); if(v > bestSim) { bestSim = v; bestSpoken = sw; } });
+    const status = bestSim >= 0.82 ? 'correct' : bestSim >= 0.48 ? 'wrong' : 'missed';
+    if(status === 'correct') correct++;
+    const el = document.getElementById('w'+i);
+    if(el) { el.classList.remove('pending','spoken'); el.classList.add(status === 'missed' ? 'wrong' : status); }
+    return {word:tw, spoken:bestSpoken, status, score:Math.round(bestSim*100)};
+  });
+  const completeness = Math.round(correct / targetRaw.length * 100);
+  const pronunciation = Math.min(100, Math.round(completeness * .88));
+  const fluency = Math.min(100, Math.round(
+    spokenRaw.length >= targetRaw.length*.6 && spokenRaw.length <= targetRaw.length*1.5
+      ? completeness * .95 : completeness * .7
+  ));
+  const rhythm = Math.min(100, Math.round(
+    Math.abs(spokenRaw.length - targetRaw.length) <= 2
+      ? completeness * .88 + 10 : completeness * .74
+  ));
+  const overall = Math.round(completeness*.35 + pronunciation*.3 + fluency*.2 + rhythm*.15);
+  const xpBonus = timerMode && timerLeft > 15 ? 15 : 0;
+  const xp = hintUsed ? Math.max(4, Math.round(overall*.36)) : Math.round(overall*.55) + (overall>=90?22:overall>=75?11:0) + xpBonus;
+  totalXP += xp;
+  sessionScores.push(overall);
+  sentState[activeSentIdx] = overall >= 40 ? 'done' : 'failed';
+  levelScores[activeSentIdx] = overall;
+  // Update skill stats
+  skillStats.pronunciation = Math.round((skillStats.pronunciation * skillStats.attempts + pronunciation) / (skillStats.attempts + 1));
+  skillStats.fluency = Math.round((skillStats.fluency * skillStats.attempts + fluency) / (skillStats.attempts + 1));
+  skillStats.completeness = Math.round((skillStats.completeness * skillStats.attempts + completeness) / (skillStats.attempts + 1));
+  skillStats.rhythm = Math.round((skillStats.rhythm * skillStats.attempts + rhythm) / (skillStats.attempts + 1));
+  skillStats.attempts++;
+  // Add wrong words to journal candidates
+  wordResults.filter(w => w.status === 'wrong').forEach(w => {
+    const existing = wordJournal.find(j => j.word === w.word);
+    if(existing) existing.count++;
+    else wordJournal.push({word:w.word, count:1, type:'err'});
+  });
+  updateSentDots();
+  updateStreak();
+  checkAchievements({overall});
+  showScore({overall, pronunciation, fluency, completeness, rhythm, xp, wordResults});
+  updateLeaderboard(overall);
+  saveState();
+  updateBadgeXP();
+  updateSidebar();
+}
+
+function updateLeaderboard(score) {
+  const lb = document.getElementById('lbList');
+  const entries = JSON.parse(lb.dataset.entries || '[]');
+  entries.push({name:'You', score, you:true});
+  entries.sort((a,b) => b.score - a.score);
+  lb.dataset.entries = JSON.stringify(entries.slice(0,5));
+  lb.innerHTML = entries.slice(0,5).map((e,i) => {
+    const rankCls = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    return `<div class="lb-entry${e.you?' you':''}">
+      <div class="lb-rank ${rankCls}">${i+1}</div>
+      <div class="lb-name">${e.you?'⭐ You':e.name}</div>
+      <div class="lb-score">${e.score}%</div>
+    </div>`;
+  }).join('');
+}
+
+function showScore({overall, pronunciation, fluency, completeness, rhythm, xp, wordResults}) {
+  const panel = document.getElementById('scorePanel');
+  panel.classList.add('show');
+  document.getElementById('sentCard').classList.add('state-scored');
+  const color = overall >= 80 ? 'var(--lime)' : overall >= 60 ? 'var(--amber)' : 'var(--rose)';
+  const fill = document.getElementById('ringFill');
+  fill.style.stroke = color;
+  const circ = 188.5;
+  fill.style.strokeDashoffset = circ;
+  setTimeout(() => {
+    fill.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(.34,1.56,.64,1), stroke .5s';
+    fill.style.strokeDashoffset = circ - (circ * overall / 100);
+  }, 80);
+  document.getElementById('ringLbl').textContent = overall + '%';
+  document.getElementById('ringLbl').style.color = color;
+  const grade = overall>=90?'🏆 Excellent!':overall>=75?'⭐ Great Job!':overall>=55?'👍 Good Try!':'💪 Keep Going!';
+  document.getElementById('scoreGrade').textContent = grade;
+  document.getElementById('scoreGrade').style.color = color;
+  document.getElementById('scoreSub').textContent = timerMode && timerLeft > 0 ? `${timerLeft}s remaining · +bonus XP` : 'Overall accuracy';
+  document.getElementById('xpBadge').textContent = '+' + xp + ' XP' + (timerMode && timerLeft > 15 ? ' ⚡' : '');
+  [['mPron','mPronF',pronunciation],['mFlu','mFluF',fluency],
+   ['mComp','mCompF',completeness],['mRhythm','mRhythmF',rhythm]].forEach(([v,b,val]) => {
+    document.getElementById(v).textContent = val + '%';
+    setTimeout(() => document.getElementById(b).style.width = val + '%', 200);
+  });
+  // Draw radar
+  drawRadar({pronunciation, fluency, completeness, rhythm});
+  // Chips
+  const chipsEl = document.getElementById('chipsEl');
+  chipsEl.innerHTML = '';
+  wordResults.forEach(r => {
+    const d = document.createElement('div');
+    d.className = 'chip ' + (r.status === 'correct' ? 'correct' : r.status === 'wrong' ? 'wrong' : 'missed');
+    d.innerHTML = `<span>${r.status==='correct'?'✓':r.status==='wrong'?'~':'✗'}</span>${r.word}`;
+    if(r.status === 'wrong' && r.spoken) d.title = 'You said: "'+r.spoken+'"';
+    chipsEl.appendChild(d);
+  });
+  document.getElementById('afText').innerHTML = aiFeedback(overall, completeness, wordResults);
+  document.getElementById('btnNext').disabled = false;
+  setTimeout(() => panel.scrollIntoView({behavior:'smooth', block:'nearest'}), 200);
+}
+
+function drawRadar({pronunciation, fluency, completeness, rhythm}) {
+  const canvas = document.getElementById('radarCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const cx = W/2, cy = H/2, r = Math.min(W,H)/2 - 20;
+  const vals = [pronunciation, fluency, completeness, rhythm].map(v => v/100);
+  const labels = ['Pron.','Fluency','Comp.','Rhythm'];
+  const angles = [0,1,2,3].map(i => (i/4)*Math.PI*2 - Math.PI/2);
+  // Grid
+  for(let g = 1; g <= 4; g++) {
+    ctx.beginPath();
+    angles.forEach((a,i) => {
+      const x = cx + Math.cos(a)*(r*g/4), y = cy + Math.sin(a)*(r*g/4);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  // Spokes
+  angles.forEach(a => {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a)*r, cy + Math.sin(a)*r);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.stroke();
+  });
+  // Data
+  ctx.beginPath();
+  vals.forEach((v, i) => {
+    const x = cx + Math.cos(angles[i])*(r*v), y = cy + Math.sin(angles[i])*(r*v);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(200,255,87,0.12)';
+  ctx.strokeStyle = 'rgba(200,255,87,0.7)';
+  ctx.lineWidth = 2;
+  ctx.fill();
+  ctx.stroke();
+  // Dots + labels
+  vals.forEach((v, i) => {
+    const x = cx + Math.cos(angles[i])*(r*v), y = cy + Math.sin(angles[i])*(r*v);
+    ctx.beginPath();
+    ctx.arc(x, y, 3.5, 0, Math.PI*2);
+    ctx.fillStyle = '#c8ff57';
+    ctx.fill();
+    const lx = cx + Math.cos(angles[i])*(r+14), ly = cy + Math.sin(angles[i])*(r+14);
+    ctx.fillStyle = '#7d839e';
+    ctx.font = '10px Space Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labels[i], lx, ly);
+  });
+}
+
+function aiFeedback(overall, completeness, wr) {
+  const wrong = wr.filter(w => w.status !== 'correct');
+  const good = wr.filter(w => w.status === 'correct');
+  if(overall >= 90) return `Brilliant! 🌟 You nailed <strong>${good.length}/${wr.length} words</strong> with near-perfect accuracy. Keep this momentum!`;
+  if(overall >= 75) { const tip = wrong.length ? `Pay extra attention to: <strong>${wrong.slice(0,2).map(w=>w.word).join(', ')}</strong>. ` : ''; return `Great work! <strong>${good.length} words</strong> correctly pronounced. ${tip}Try Slow speed for fine-tuning.`; }
+  if(overall >= 55) return `Good effort! <strong>${completeness}% completeness</strong>. Use the Slow button to absorb the rhythm, then try again.`;
+  return `Keep going! Start with <em>Listen (Slow)</em> and repeat word by word. Focus first on: <strong>${wr.slice(0,3).map(w=>w.word).join(' ')}</strong>`;
+}
+
+/* ── SHARE ── */
+function shareScore() {
+  const overall = document.getElementById('ringLbl').textContent;
+  const grade = document.getElementById('scoreGrade').textContent;
+  const text = `TalkyLab Pronunciation Score\n${grade} — ${overall}\n🌐 Practice at TalkyLab`;
+  navigator.clipboard.writeText(text).then(() => toast('✅ Score copied to clipboard!')).catch(() => toast('Copy failed'));
+}
+function shareToClipboard() {
+  const level = getDB(activeDiff)[activeLevel];
+  const s = level[activeSentIdx];
+  navigator.clipboard.writeText(s.text).then(() => toast('📋 Sentence copied!')).catch(() => toast('Copy failed'));
+}
+
+/* ── BOOKMARK ── */
+function toggleBookmark() {
+  const key = `${activeDiff}-${activeLevel}-${activeSentIdx}`;
+  const level = getDB(activeDiff)[activeLevel];
+  const s = level[activeSentIdx];
+  const btn = document.getElementById('btnBookmark');
+  if(bookmarkedSentences.has(key)) {
+    bookmarkedSentences.delete(key);
+    btn.classList.remove('saved');
+    toast('Bookmark removed');
+    // Remove from journal
+    const i = wordJournal.findIndex(j => j.word === s.text && j.type === 'bm');
+    if(i !== -1) wordJournal.splice(i, 1);
+  } else {
+    bookmarkedSentences.add(key);
+    btn.classList.add('saved');
+    toast('🔖 Bookmarked!');
+    wordJournal.unshift({word:s.text.slice(0,30)+(s.text.length>30?'…':''), count:1, type:'bm'});
+  }
+  updateWordJournal();
+  saveState();
+}
+
+/* ── PHONEME FOCUS ── */
+const PHONEMES_EN = [
+  {ph:'/θ/', desc:'Tongue between teeth — "th" in think'},
+  {ph:'/ð/', desc:'"th" in the/this (voiced)'},
+  {ph:'/ŋ/', desc:'Nasal — "ng" in sing, no hard G'},
+  {ph:'/æ/', desc:'Short-A — cat, bat, sat'},
+  {ph:'/ɪ/', desc:'Short-I — bit, sit, kit'},
+  {ph:'/ʊ/', desc:'Short-OO — book, look, cook'},
+  {ph:'/ɜː/', desc:'R-coloured vowel — bird, word'},
+  {ph:'/dʒ/', desc:'Affricate — judge, jump'},
+];
+const PHONEMES_HI = [
+  {ph:'ख', desc:'Aspirated K — kh sound, breathe out'},
+  {ph:'घ', desc:'Aspirated G — heavy gh sound'},
+  {ph:'ड़', desc:'Retroflex flap — rare in Hindi script'},
+  {ph:'ण', desc:'Retroflex nasal — tongue touches roof'},
+  {ph:'श', desc:'Palatal sibilant — sh as in show'},
+  {ph:'ष', desc:'Retroflex sibilant — harder sh'},
+  {ph:'ज्ञ', desc:'Compound — dnyaan, not gyan'},
+  {ph:'क्ष', desc:'Compound — paksh, ksha cluster'},
+];
+function renderPhonemes() {
+  const grid = document.getElementById('phonemeGrid');
+  const phonemes = LANG === 'hi' ? PHONEMES_HI : PHONEMES_EN;
+  grid.innerHTML = phonemes.map((p,i) =>
+    `<div class="ph-chip" onclick="focusPhoneme(${i})" data-idx="${i}">${p.ph}</div>`
+  ).join('');
+}
+function focusPhoneme(idx) {
+  document.querySelectorAll('.ph-chip').forEach(c => c.classList.remove('active'));
+  const chips = document.querySelectorAll('.ph-chip');
+  chips[idx]?.classList.add('active');
+  const phonemes = LANG === 'hi' ? PHONEMES_HI : PHONEMES_EN;
+  document.getElementById('phonemeDesc').textContent = phonemes[idx]?.desc || '';
+  speakText(phonemes[idx]?.ph || '', 0.7, true);
+}
+
+/* ── TIPS ── */
+const TIPS_EN = [
+  'Listen at 0.75× speed before recording.',
+  'Open mouth wider for vowel sounds.',
+  'Link words together in a smooth stream.',
+  'Stress the right syllable — that\'s 80% of it.',
+  'Record yourself and compare to native audio.',
+];
+const TIPS_HI = [
+  'Aspirated consonants like ख, घ need a puff of air.',
+  'Hindi retroflex sounds: curl tongue back slightly.',
+  'Long vowels (आ, ई, ऊ) are held twice as long.',
+  'Matras (vowel marks) change pronunciation significantly.',
+  'Practice word-by-word before full sentences.',
+];
+function renderTips(diff) {
+  const tips = LANG === 'hi' ? TIPS_HI : TIPS_EN;
+  const pool = diff === 'hard' ? tips : tips.slice(0, 3);
+  document.getElementById('tipList').innerHTML = pool.map(t =>
+    `<div class="tip-item"><div class="tip-dot"></div><span>${t}</span></div>`
+  ).join('');
+}
+
+/* ── WORD JOURNAL ── */
+function updateWordJournal() {
+  const list = document.getElementById('wjList');
+  const count = document.getElementById('wjCount');
+  const unique = [...new Map(wordJournal.map(j => [j.word, j])).values()].slice(0, 15);
+  count.textContent = unique.length;
+  if(!unique.length) {
+    list.innerHTML = '<div class="wj-empty">No words saved yet.</div>';
+    return;
+  }
+  list.innerHTML = unique.map(j =>
+    `<div class="wj-entry">
+      <div class="wj-word">${j.word}</div>
+      ${j.count > 1 ? `<div class="wj-count">×${j.count}</div>` : ''}
+      <div class="wj-badge ${j.type==='bm'?'ok':'err'}">${j.type==='bm'?'📌':'⚠'}</div>
+    </div>`
+  ).join('');
+}
+
+/* ── SIDEBAR UPDATE ── */
+function updateSidebar() { updateWordJournal(); }
+
+/* ── RETRYSCORE / NEXT ── */
+function retrySentence() { loadSentence(activeSentIdx); }
+function nextSentence() {
+  if(activeSentIdx >= 4) finishLevel();
+  else loadSentence(activeSentIdx + 1);
+}
+
+/* ══ LEVEL / MODULE FLOW ══ */
+function finishLevel() {
+  const scores = levelScores.filter(s => s !== undefined);
+  const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length) : 0;
+  const best = scores.length ? Math.max(...scores) : 0;
+  state[activeDiff][activeLevel].done = true;
+  state[activeDiff][activeLevel].scores = scores;
+  checkAchievements({});
+  saveState();
+  const levels = getDB(activeDiff);
+  const isLastLevel = activeLevel >= levels.length - 1;
+  document.getElementById('scorePanel').classList.remove('show');
+  document.getElementById('sentCard').style.display = 'none';
+  document.getElementById('micZone').style.display = 'none';
+  document.getElementById('hintBox').classList.remove('show');
+  if(isLastLevel) {
+    document.getElementById('levelComplete').classList.remove('show');
+    document.getElementById('moduleComplete').classList.add('show');
+    document.getElementById('mcDiffName').textContent = activeDiff.charAt(0).toUpperCase()+activeDiff.slice(1);
+    document.getElementById('mcSub').textContent = 'You finished all levels in '+activeDiff+' — outstanding!';
+    document.getElementById('mcStats').innerHTML = statHTML(avg, scores.length, best);
+    if(activeDiff === 'easy') toast('🔓 Medium difficulty unlocked!');
+    if(activeDiff === 'medium') toast('🔓 Hard difficulty unlocked!');
+    document.getElementById('moduleComplete').scrollIntoView({behavior:'smooth',block:'start'});
+  } else {
+    document.getElementById('moduleComplete').classList.remove('show');
+    const lc = document.getElementById('levelComplete');
+    lc.classList.add('show');
+    document.getElementById('lcNum').textContent = activeLevel + 1;
+    document.getElementById('lcSub').textContent = 'All 5 sentences done! Next level unlocked.';
+    document.getElementById('lcStats').innerHTML = statHTML(avg, scores.length, best);
+    document.getElementById('btnNextLevel').onclick = () => advanceLevel();
+    document.getElementById('btnNextLevel').textContent = 'Next Level →';
+    lc.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+}
+function statHTML(avg, cnt, best) {
+  return `<div class="lc-stat"><div class="lc-stat-val" style="color:var(--blue)">${avg}%</div><div class="lc-stat-lbl">Avg</div></div>
+  <div class="lc-stat"><div class="lc-stat-val" style="color:var(--amber)">${cnt}</div><div class="lc-stat-lbl">Done</div></div>
+  <div class="lc-stat"><div class="lc-stat-val" style="color:var(--lime)">${best}%</div><div class="lc-stat-lbl">Best</div></div>`;
+}
+function advanceLevel() { openLevel(activeDiff, activeLevel+1); }
+
+/* ══ NAVIGATION ══ */
+function goToMap() {
+  stopTTS(); stopTimerCountdown();
+  document.getElementById('practiceView').classList.remove('show');
+  document.getElementById('levelMap').classList.add('show');
+  renderMap();
+}
+
+function openLevel(diff, levelIdx) {
+  if(!isDiffUnlocked(diff)) { toast('🔒 Complete previous difficulty first!'); return; }
+  if(!isLevelUnlocked(diff, levelIdx)) { toast('🔒 Complete the previous level first!'); return; }
+  activeDiff = diff; activeLevel = levelIdx;
+  activeSentIdx = 0; levelScores = []; sentState = Array(5).fill('pending');
+  document.getElementById('levelMap').classList.remove('show');
+  document.getElementById('practiceView').classList.add('show');
+  document.getElementById('sentCard').style.display = '';
+  document.getElementById('micZone').style.display = '';
+  document.getElementById('levelComplete').classList.remove('show');
+  document.getElementById('moduleComplete').classList.remove('show');
+  document.getElementById('bcDiff').textContent = diff.charAt(0).toUpperCase()+diff.slice(1);
+  document.getElementById('bcLevel').textContent = 'Level ' + (levelIdx+1);
+  document.getElementById('cardStripe').className = 'card-stripe ' + diff;
+  document.getElementById('timerBadge').style.display = timerMode ? 'flex' : 'none';
+  document.getElementById('timerBar').classList.toggle('show', timerMode);
+  updateSRLang();
+  renderPhonemes();
+  renderTips(diff);
+  document.getElementById('lbList').dataset.entries = '[]';
+  document.getElementById('lbList').innerHTML = '<div style="font-size:.7rem;color:var(--text3);font-family:var(--fm);text-align:center;padding:6px 0">Complete a sentence to start ranking</div>';
+  initSentDots();
+  loadSentence(0);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function initSentDots() {
+  const c = document.getElementById('spDots');
+  c.innerHTML = '';
+  for(let i = 0; i < 5; i++) {
+    const d = document.createElement('div');
+    d.className = 'sp-dot ' + (i === 0 ? 'current' : 'pending');
+    d.id = 'sdot'+i;
+    d.textContent = i+1;
+    c.appendChild(d);
+  }
+  document.getElementById('spFill').style.width = '0%';
+  document.getElementById('spFraction').textContent = '0 / 5';
+}
+
+function updateSentDots() {
+  for(let i = 0; i < 5; i++) {
+    const d = document.getElementById('sdot'+i); if(!d) continue;
+    if(i < activeSentIdx) d.className = 'sp-dot ' + (sentState[i]==='done'?'done':'failed');
+    else if(i === activeSentIdx) d.className = 'sp-dot current';
+    else d.className = 'sp-dot pending';
+  }
+  const done = sentState.filter(s => s==='done'||s==='failed').length;
+  document.getElementById('spFill').style.width = (done/5*100) + '%';
+  document.getElementById('spFraction').textContent = done + ' / 5';
+}
+
+function loadSentence(idx) {
+  activeSentIdx = idx;
+  stopTTS(); stopTimerCountdown();
+  document.getElementById('scorePanel').classList.remove('show');
+  document.getElementById('hintBox').classList.remove('show');
+  document.getElementById('btnHint').classList.remove('used');
+  document.getElementById('sentCard').className = 'sent-card';
+  document.getElementById('sentCard').style.display = '';
+  document.getElementById('micZone').style.display = '';
+  document.getElementById('levelComplete').classList.remove('show');
+  document.getElementById('moduleComplete').classList.remove('show');
+  resetMicUI();
+  hintUsed = false;
+  const key = `${activeDiff}-${activeLevel}-${idx}`;
+  document.getElementById('btnBookmark').classList.toggle('saved', bookmarkedSentences.has(key));
+  const level = getDB(activeDiff)[activeLevel];
+  const s = level[idx];
+  document.getElementById('sentNum').textContent = 'SENTENCE ' + (idx+1) + ' OF 5';
+  const de = document.getElementById('sentDiff');
+  de.textContent = activeDiff.charAt(0).toUpperCase()+activeDiff.slice(1);
+  de.className = 'c-diff diff-' + activeDiff;
+  document.getElementById('sentPhonetic').textContent = s.phonetic || '';
+  const el = document.getElementById('sentText');
+  const words = s.text.split(' ');
+  el.innerHTML = '';
+  words.forEach((w, i) => {
+    const sp = document.createElement('span');
+    sp.className = 'word pending'; sp.id = 'w'+i; sp.textContent = w;
+    el.appendChild(sp);
+    if(i < words.length-1) el.appendChild(document.createTextNode(' '));
+  });
+  updateSentDots();
+}
+
+function showHint() {
+  const level = getDB(activeDiff)[activeLevel];
+  document.getElementById('hintText').innerHTML = level[activeSentIdx].hint || 'No hint available.';
+  document.getElementById('hintBox').classList.add('show');
+  document.getElementById('btnHint').classList.add('used');
+  hintUsed = true;
+  toast('💡 Hint revealed (-50% XP bonus)');
+}
+
+/* ══ MAP RENDERING ══ */
+function renderMap() {
+  ['easy','medium','hard'].forEach(diff => {
+    const levels = getDB(diff);
+    const dotsEl = document.getElementById('dots-'+diff);
+    dotsEl.innerHTML = '';
+    const unlocked = isDiffUnlocked(diff);
+    const badge = document.getElementById('badge-'+diff);
+    const overlay = document.getElementById('overlay-'+diff);
+    if(!unlocked) {
+      badge.className = 'mc-badge locked'; badge.textContent = '🔒 Locked';
+      if(overlay) overlay.style.display = 'flex';
+    } else {
+      if(overlay) overlay.style.display = 'none';
+      const allDone = isAllDone(diff);
+      badge.className = 'mc-badge ' + (allDone ? 'done' : 'available');
+      badge.textContent = allDone ? '✅ Complete' : 'Available';
+    }
+    let completedLevels = 0;
+    levels.forEach((_, idx) => {
+      const done = state[diff][idx].done;
+      const avail = isLevelUnlocked(diff, idx);
+      if(done) completedLevels++;
+      const d = document.createElement('div');
+      let cls = 'lv-dot ';
+      if(!unlocked || !avail) cls += 'locked';
+      else if(done) cls += 'done';
+      else { cls += 'available ' + diff; if(!state[diff][idx].done && avail) cls += ' current-level'; }
+      d.className = cls;
+      const scores = state[diff][idx].scores;
+      const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length) : 0;
+      d.innerHTML = `<span class="lv-num">L${idx+1}</span><span class="lv-icon">${done?'✅':!unlocked||!avail?'🔒':'▶'}</span>${done&&avg?'<span class="lv-score">'+avg+'%</span>':''}`;
+      if(avail && unlocked) d.onclick = () => openLevel(diff, idx);
+      dotsEl.appendChild(d);
+    });
+    const pct = Math.round(completedLevels / levels.length * 100);
+    document.getElementById('pct-'+diff).textContent = pct + '%';
+    document.getElementById('fill-'+diff).style.width = pct + '%';
+  });
+  // Map stats
+  const totalDone = ['easy','medium','hard'].reduce((a,d) => a + state[d].filter(l=>l.done).length, 0);
+  const totalLevels = 9;
+  document.getElementById('mapStats').innerHTML = `
+    <div class="map-stat"><span class="ms-icon">📈</span><span><span class="ms-val">${totalXP}</span> <span class="ms-lbl">total XP</span></span></div>
+    <div class="map-stat"><span class="ms-icon">✅</span><span><span class="ms-val">${totalDone}/${totalLevels}</span> <span class="ms-lbl">levels done</span></span></div>
+    <div class="map-stat"><span class="ms-icon">🔥</span><span><span class="ms-val">${streak}</span> <span class="ms-lbl">day streak</span></span></div>
+    <div class="map-stat"><span class="ms-icon">🎯</span><span><span class="ms-val">${achievements.length}</span> <span class="ms-lbl">achievements</span></span></div>
+  `;
+}
+
+/* ══ LANG PICKER ══ */
+function openLangPicker() {
+  document.getElementById('langModal').classList.add('show');
+  const grid = document.getElementById('langGrid');
+  grid.innerHTML = '';
+  Object.entries(LANG_META).forEach(([code, meta]) => {
+    const btn = document.createElement('button');
+    btn.className = 'lang-btn' + (code===LANG?' active':'');
+    btn.innerHTML = `<div class="lang-btn-name">${meta.label}</div><div class="lang-btn-native">${meta.native}</div>`;
+    btn.onclick = () => changeLang(code);
+    grid.appendChild(btn);
+  });
+}
+function closeLangPicker() { document.getElementById('langModal').classList.remove('show'); }
+function changeLang(code) {
+  LANG = code; META = LANG_META[code];
+  localStorage.setItem('pron_lang', LANG);
+  state = buildInitialState(); saveState();
+  closeLangPicker();
+  document.getElementById('badgeLang').textContent = META.label;
+  initTTS(LANG);
+  updateSRLang();
+  goToMap();
+  toast('✅ Switched to ' + META.label);
+}
+document.getElementById('langModal').addEventListener('click', function(e) { if(e.target===this) closeLangPicker(); });
+
+function getCurSpeed() { return curSpeed; }
+function setSpeed(btn) {
+  document.querySelectorAll('.spd-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  curSpeed = parseFloat(btn.dataset.speed);
+}
+function updateBadgeXP() { document.getElementById('badgeXP').textContent = '⚡ ' + totalXP + ' XP'; }
+
+function resetMicUI() {
+  isRecording = false;
+  document.getElementById('micBtn').classList.remove('active');
+  document.getElementById('waveform').classList.remove('active');
+  document.getElementById('micLabel').textContent = 'TAP THE MIC, THEN READ ALOUD';
+  document.getElementById('micDot').classList.remove('rec');
+  document.getElementById('micStatus').textContent = 'Press mic, then speak the sentence';
+  document.getElementById('micStatus').className = 'mic-status';
+  animateWave(false);
+  if(timerMode) {
+    document.getElementById('timerFill').style.width = '100%';
+    document.getElementById('timerFill').className = 'timer-fill';
+    document.getElementById('timerDisplay').textContent = '30s';
+  }
+}
+
+function animateWave(active) {
+  document.querySelectorAll('.wvb').forEach((b, i) => {
+    if(active) b.style.height = (Math.random()*28+6)+'px';
+    else { const base=[6,14,24,32,24,14,6]; b.style.height=base[i]+'px'; }
+  });
+}
+
+function sim(a, b) {
+  a = (a||'').toLowerCase().replace(/[^a-zäöüß\u0900-\u0D7F\u0600-\u06FF\u0B00-\u0B7F\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\u0980-\u09FF\u0A80-\u0AFF\u0A00-\u0A7F]/g,'');
+  b = (b||'').toLowerCase().replace(/[^a-zäöüß\u0900-\u0D7F\u0600-\u06FF\u0B00-\u0B7F\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\u0980-\u09FF\u0A80-\u0AFF\u0A00-\u0A7F]/g,'');
+  if(!a||!b) return 0; if(a===b) return 1;
+  const m=a.length, n=b.length;
+  const dp=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);
+  for(let j=0;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++) for(let j=1;j<=n;j++)
+    dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return 1-dp[m][n]/Math.max(m,n);
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tid); t._tid = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ══ INIT ══ */
+window.addEventListener('load', () => {
+  META = LANG_META[LANG];
+  document.getElementById('badgeLang').textContent = META.label;
+  updateBadgeXP();
+  document.getElementById('badgeStreak').textContent = '🔥 ' + streak + ' streak';
+  initTTS(LANG);
+  initSR();
+  updateWordJournal();
+  document.getElementById('levelMap').classList.add('show');
+  renderMap();
+});
+</script>
+</body>
+</html>

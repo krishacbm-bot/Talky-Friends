@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Translation Tools — TalkyLab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#f7f5f0;--surface:#ffffff;--surface2:#f0ede6;--surface3:#e8e4db;
+  --ink:#1a1814;--ink2:#5a5650;--ink3:#9a958e;
+  --accent:#c8502a;--accent2:#2a6bc8;--gold:#c8960a;--teal:#0a8c7a;
+  --border:rgba(26,24,20,.08);--border2:rgba(26,24,20,.15);
+  --font-d:'DM Serif Display',serif;--font-b:'DM Sans',sans-serif;--font-m:'JetBrains Mono',monospace;
+  --r-sm:8px;--r-md:14px;--r-lg:20px;--r-xl:28px;--r-pill:999px;
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);--ease-out:cubic-bezier(.22,1,.36,1);
+  --shadow-sm:0 1px 4px rgba(0,0,0,.06);
+  --shadow-md:0 4px 20px rgba(0,0,0,.08);
+  --shadow-lg:0 12px 48px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font-b);background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;}
+
+/* grain overlay */
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+.app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;
+  padding:0 36px;height:60px;background:rgba(247,245,240,.92);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border2);gap:16px;}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;cursor:pointer;}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--ink);
+  display:flex;align-items:center;justify-content:center;}
+.logo-text{font-family:var(--font-d);font-size:1.1rem;color:var(--ink);}
+.logo-text em{color:var(--accent);font-style:normal;}
+.mod-chip{font-size:.68rem;font-weight:500;font-family:var(--font-m);color:var(--accent);
+  background:rgba(200,80,42,.08);border:1px solid rgba(200,80,42,.2);
+  padding:3px 10px;border-radius:var(--r-pill);letter-spacing:.08em;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.lang-selector{display:flex;align-items:center;gap:6px;}
+.lang-selector label{font-size:.72rem;color:var(--ink3);font-weight:500;}
+.lang-select{appearance:none;background:var(--surface);border:1px solid var(--border2);
+  color:var(--ink);font-family:var(--font-b);font-size:.78rem;font-weight:500;
+  padding:5px 28px 5px 10px;border-radius:var(--r-sm);cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a958e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;outline:none;}
+.lang-select:focus{border-color:var(--accent);}
+.back-link{display:flex;align-items:center;gap:5px;padding:6px 14px;border-radius:var(--r-pill);
+  background:var(--surface);border:1px solid var(--border2);color:var(--ink2);
+  font-family:var(--font-b);font-size:.78rem;font-weight:500;cursor:pointer;
+  transition:all .18s;text-decoration:none;}
+.back-link:hover{background:var(--surface2);color:var(--ink);}
+
+/* SCREENS */
+.screen{display:none;}
+.screen.active{display:block;animation:fadeUp .45s var(--ease-out) both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* ── HOME ── */
+.home-wrap{max-width:1000px;margin:0 auto;padding:56px 36px 80px;}
+
+.hero{margin-bottom:56px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;}
+@media(max-width:700px){.hero{grid-template-columns:1fr;}}
+.hero-left{}
+.hero-eyebrow{font-family:var(--font-m);font-size:.68rem;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px;}
+.hero-title{font-family:var(--font-d);font-size:clamp(2.4rem,4vw,3.4rem);line-height:1.05;color:var(--ink);margin-bottom:16px;}
+.hero-title em{font-style:italic;color:var(--accent);}
+.hero-body{font-size:.92rem;color:var(--ink2);line-height:1.7;max-width:380px;}
+.hero-right{display:flex;flex-direction:column;gap:8px;}
+.mini-pair{display:flex;align-items:stretch;gap:0;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border2);box-shadow:var(--shadow-sm);}
+.mini-lang{flex:1;padding:14px 16px;background:var(--surface);}
+.mini-lang:first-child{border-right:1px solid var(--border2);}
+.mini-lang-code{font-family:var(--font-m);font-size:.58rem;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}
+.mini-lang-text{font-size:.85rem;font-weight:500;color:var(--ink);line-height:1.4;}
+.mini-lang-text.script{font-size:.95rem;}
+
+/* mode cards */
+.modes-section{margin-bottom:48px;}
+.section-label{font-family:var(--font-m);font-size:.65rem;color:var(--ink3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px;}
+.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+@media(max-width:680px){.mode-grid{grid-template-columns:1fr;}}
+.mode-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-lg);
+  padding:22px;cursor:pointer;transition:all .22s var(--ease-spring);position:relative;overflow:hidden;}
+.mode-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.mode-card.mc-match::before{background:var(--accent);}
+.mode-card.mc-audio::before{background:var(--accent2);}
+.mode-card.mc-flash::before{background:var(--teal);}
+.mode-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);}
+.mc-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+.mc-match .mc-icon{background:rgba(200,80,42,.1);}
+.mc-audio .mc-icon{background:rgba(42,107,200,.1);}
+.mc-flash .mc-icon{background:rgba(10,140,122,.1);}
+.mc-title{font-size:.92rem;font-weight:600;color:var(--ink);margin-bottom:5px;}
+.mc-desc{font-size:.76rem;color:var(--ink2);line-height:1.5;}
+.mc-tag{display:inline-flex;align-items:center;gap:5px;margin-top:10px;font-family:var(--font-m);
+  font-size:.6rem;color:var(--ink3);letter-spacing:.08em;}
+
+/* how it works */
+.how-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+@media(max-width:680px){.how-row{grid-template-columns:repeat(2,1fr);}}
+.how-step{padding:14px;background:var(--surface2);border-radius:var(--r-md);}
+.how-num{font-family:var(--font-m);font-size:.62rem;color:var(--accent);margin-bottom:6px;font-weight:500;}
+.how-title{font-size:.78rem;font-weight:600;color:var(--ink);margin-bottom:3px;}
+.how-desc{font-size:.68rem;color:var(--ink2);line-height:1.45;}
+
+/* ── QUIZ SCREEN ── */
+.quiz-wrap{max-width:760px;margin:0 auto;padding:36px 36px 80px;}
+
+.bc{display:flex;align-items:center;gap:7px;font-size:.72rem;color:var(--ink3);margin-bottom:22px;}
+.bc button{background:none;border:none;color:var(--ink3);font-family:var(--font-b);font-size:.72rem;cursor:pointer;padding:0;transition:color .15s;}
+.bc button:hover{color:var(--ink);}
+.bc-sep{color:var(--border2);}
+
+.quiz-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.quiz-mode-chip{font-family:var(--font-m);font-size:.62rem;padding:3px 10px;border-radius:var(--r-pill);letter-spacing:.08em;font-weight:500;}
+.qmc-match{background:rgba(200,80,42,.08);color:var(--accent);border:1px solid rgba(200,80,42,.2);}
+.qmc-audio{background:rgba(42,107,200,.08);color:var(--accent2);border:1px solid rgba(42,107,200,.2);}
+.qmc-flash{background:rgba(10,140,122,.08);color:var(--teal);border:1px solid rgba(10,140,122,.2);}
+.qcount{font-family:var(--font-m);font-size:.68rem;color:var(--ink3);}
+.qcount strong{color:var(--ink);}
+
+.prog-outer{height:4px;background:var(--surface3);border-radius:4px;overflow:hidden;margin-bottom:28px;}
+.prog-inner{height:100%;border-radius:4px;transition:width .5s var(--ease-out);}
+.prog-match{background:var(--accent);}
+.prog-audio{background:var(--accent2);}
+.prog-flash{background:var(--teal);}
+
+/* BILINGUAL CARD */
+.bilingual-card{display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:var(--r-xl);
+  overflow:hidden;border:1px solid var(--border2);margin-bottom:20px;box-shadow:var(--shadow-md);}
+.bl-side{padding:24px 26px;}
+.bl-side.bl-left{background:var(--surface);border-right:1px solid var(--border2);}
+.bl-side.bl-right{background:var(--surface2);}
+.bl-lang-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.bl-lang-name{font-family:var(--font-m);font-size:.6rem;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;}
+.bl-play-btn{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--r-pill);
+  border:1px solid var(--border2);background:transparent;font-family:var(--font-b);
+  font-size:.68rem;font-weight:500;cursor:pointer;color:var(--ink2);transition:all .15s;}
+.bl-play-btn:hover{background:var(--surface3);color:var(--ink);}
+.bl-play-btn.playing{border-color:var(--accent2);color:var(--accent2);background:rgba(42,107,200,.06);}
+.bl-play-btn svg{flex-shrink:0;}
+.bl-sentence{font-size:1.05rem;font-weight:500;color:var(--ink);line-height:1.6;}
+.bl-sentence.script-text{font-size:1.15rem;line-height:1.8;}
+.bl-sentence.hidden-text{filter:blur(6px);user-select:none;pointer-events:none;transition:filter .3s;}
+.bl-sentence.hidden-text.revealed{filter:none;}
+.reveal-hint{font-size:.68rem;color:var(--ink3);margin-top:8px;font-style:italic;}
+
+/* MATCH MODE */
+.match-instruction{font-size:.82rem;color:var(--ink2);margin-bottom:14px;line-height:1.5;}
+.match-options{display:flex;flex-direction:column;gap:8px;}
+.match-opt{width:100%;text-align:left;padding:13px 16px;border-radius:var(--r-md);
+  border:1px solid var(--border2);background:var(--surface);font-family:var(--font-b);
+  font-size:.9rem;font-weight:500;cursor:pointer;transition:all .18s var(--ease-out);color:var(--ink);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.match-opt:hover:not(:disabled){border-color:var(--accent);background:rgba(200,80,42,.04);
+  transform:translateX(4px);}
+.match-opt.picked{border-color:var(--accent);background:rgba(200,80,42,.06);color:var(--accent);}
+.match-opt.ok{border-color:var(--teal);background:rgba(10,140,122,.06);color:var(--teal);}
+.match-opt.no{border-color:#c82a2a;background:rgba(200,42,42,.05);color:#c82a2a;}
+.match-opt:disabled{cursor:default;}
+.mo-play{flex-shrink:0;width:26px;height:26px;border-radius:50%;border:1px solid var(--border2);
+  background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:all .15s;}
+.mo-play:hover{background:var(--surface3);}
+
+/* AUDIO MATCH MODE */
+.audio-instruction{font-size:.82rem;color:var(--ink2);margin-bottom:14px;}
+.audio-play-center{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:28px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-lg);
+  margin-bottom:14px;gap:12px;}
+.big-play-btn{width:60px;height:60px;border-radius:50%;
+  border:none;background:var(--ink);color:white;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:all .2s var(--ease-spring);}
+.big-play-btn:hover{transform:scale(1.08);background:var(--accent);}
+.big-play-btn.playing{background:var(--accent);animation:pulse-ring 1.2s ease infinite;}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(200,80,42,.35)}50%{box-shadow:0 0 0 12px rgba(200,80,42,0)}}
+.audio-lang-label{font-family:var(--font-m);font-size:.62rem;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;}
+.audio-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.audio-opt{padding:14px 12px;border-radius:var(--r-md);border:1px solid var(--border2);
+  background:var(--surface);font-family:var(--font-b);font-size:.88rem;font-weight:500;
+  cursor:pointer;transition:all .18s var(--ease-out);color:var(--ink);text-align:center;line-height:1.4;}
+.audio-opt:hover:not(:disabled){border-color:var(--accent2);background:rgba(42,107,200,.05);}
+.audio-opt.picked{border-color:var(--accent2);background:rgba(42,107,200,.07);color:var(--accent2);}
+.audio-opt.ok{border-color:var(--teal);background:rgba(10,140,122,.06);color:var(--teal);}
+.audio-opt.no{border-color:#c82a2a;background:rgba(200,42,42,.05);color:#c82a2a;}
+.audio-opt:disabled{cursor:default;}
+
+/* FLASHCARD MODE */
+.flashcard-wrap{perspective:1000px;margin-bottom:16px;}
+.flashcard{width:100%;min-height:180px;position:relative;transform-style:preserve-3d;
+  transition:transform .55s var(--ease-out);cursor:pointer;}
+.flashcard.flipped{transform:rotateY(180deg);}
+.fc-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--r-xl);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:28px;border:1px solid var(--border2);box-shadow:var(--shadow-md);}
+.fc-front{background:var(--surface);}
+.fc-back{background:var(--ink);transform:rotateY(180deg);}
+.fc-label{font-family:var(--font-m);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;}
+.fc-front .fc-label{color:var(--ink3);}
+.fc-back .fc-label{color:rgba(255,255,255,.4);}
+.fc-text{font-size:1.3rem;font-weight:500;text-align:center;line-height:1.5;}
+.fc-front .fc-text{color:var(--ink);}
+.fc-back .fc-text{color:white;font-size:1.2rem;}
+.fc-hint{font-size:.7rem;margin-top:12px;}
+.fc-front .fc-hint{color:var(--ink3);}
+.fc-back .fc-hint{color:rgba(255,255,255,.45);}
+.fc-row{display:flex;gap:8px;margin-bottom:14px;}
+.fc-action{flex:1;padding:10px;border-radius:var(--r-md);border:1px solid var(--border2);
+  background:var(--surface);font-family:var(--font-b);font-size:.82rem;font-weight:500;
+  cursor:pointer;transition:all .18s;color:var(--ink);}
+.fc-action.fc-know{border-color:var(--teal);color:var(--teal);}
+.fc-action.fc-know:hover{background:rgba(10,140,122,.07);}
+.fc-action.fc-miss{border-color:#c82a2a;color:#c82a2a;}
+.fc-action.fc-miss:hover{background:rgba(200,42,42,.05);}
+.fc-action:disabled{opacity:.35;cursor:not-allowed;}
+.fc-progress{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;}
+.fc-dot{width:8px;height:8px;border-radius:50%;background:var(--surface3);transition:background .3s;}
+.fc-dot.known{background:var(--teal);}
+.fc-dot.missed{background:#c82a2a;}
+
+/* FEEDBACK */
+.fb-bar{width:100%;border-radius:var(--r-md);padding:13px 16px;margin-top:10px;
+  display:none;align-items:flex-start;gap:10px;font-weight:600;font-size:.88rem;
+  animation:fbIn .28s var(--ease-spring);}
+@keyframes fbIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+.fb-bar.show{display:flex;}
+.fb-bar.ok{background:rgba(10,140,122,.06);border:1px solid rgba(10,140,122,.25);color:var(--teal);}
+.fb-bar.no{background:rgba(200,42,42,.05);border:1px solid rgba(200,42,42,.2);color:#c82a2a;}
+.fb-icon{font-size:1.2rem;flex-shrink:0;}
+.fb-ttl{font-size:.88rem;font-weight:700;margin-bottom:2px;}
+.fb-dtl{font-size:.74rem;font-weight:400;opacity:.85;line-height:1.4;}
+
+/* ACTION BTN */
+.act-btn{width:100%;padding:14px;border-radius:var(--r-pill);border:none;
+  font-family:var(--font-b);font-size:.92rem;font-weight:600;cursor:pointer;
+  margin-top:12px;transition:all .2s var(--ease-spring);}
+.act-check{background:var(--ink);color:white;}
+.act-check:hover:not(:disabled){background:#2a2620;transform:translateY(-1px);box-shadow:var(--shadow-md);}
+.act-check:disabled{opacity:.3;cursor:not-allowed;transform:none!important;box-shadow:none!important;}
+.act-ok{background:var(--teal);color:white;}
+.act-ok:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(10,140,122,.25);}
+.act-no{background:#c82a2a;color:white;}
+.act-no:hover{transform:translateY(-1px);}
+
+/* RESULT SCREEN */
+.result-wrap{max-width:760px;margin:0 auto;padding:48px 36px 80px;}
+.res-hero{text-align:center;margin-bottom:40px;}
+.res-emoji{font-size:3.5rem;display:block;margin-bottom:10px;}
+.res-title{font-family:var(--font-d);font-size:2rem;color:var(--ink);margin-bottom:6px;}
+.res-score{font-family:var(--font-d);font-size:3.5rem;font-style:italic;color:var(--accent);line-height:1;margin-bottom:8px;}
+.res-sub{font-size:.9rem;color:var(--ink2);margin-bottom:24px;}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px;}
+.stat-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-lg);padding:16px;text-align:center;}
+.stat-val{font-family:var(--font-d);font-size:1.8rem;color:var(--ink);}
+.stat-lbl{font-size:.62rem;font-family:var(--font-m);color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-top:3px;}
+.recap-label{font-family:var(--font-m);font-size:.62rem;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+.recap-list{display:flex;flex-direction:column;gap:7px;margin-bottom:28px;}
+.recap-item{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-md);
+  padding:12px 16px;display:flex;align-items:flex-start;gap:10px;}
+.ri-num{width:22px;height:22px;border-radius:50%;background:var(--surface2);
+  font-family:var(--font-m);font-size:.58rem;color:var(--ink3);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.ri-body{flex:1;min-width:0;}
+.ri-mode{font-size:.58rem;font-family:var(--font-m);color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+.ri-en{font-size:.82rem;font-weight:500;color:var(--ink);}
+.ri-native{font-size:.78rem;color:var(--ink2);margin-top:1px;}
+.ri-ans{font-size:.7rem;font-family:var(--font-m);}
+.ri-ans.ok{color:var(--teal);}
+.ri-ans.no{color:#c82a2a;}
+.ri-icon{font-size:.95rem;flex-shrink:0;margin-top:1px;}
+.res-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-primary{display:inline-flex;align-items:center;gap:7px;padding:11px 22px;
+  background:var(--ink);color:white;font-family:var(--font-b);font-weight:600;font-size:.88rem;
+  border:none;border-radius:var(--r-pill);cursor:pointer;transition:all .2s;}
+.btn-primary:hover{background:#2a2620;transform:translateY(-1px);}
+.btn-outline{display:inline-flex;align-items:center;gap:7px;padding:11px 22px;
+  background:var(--surface);color:var(--ink);font-family:var(--font-b);font-weight:600;font-size:.88rem;
+  border:1px solid var(--border2);border-radius:var(--r-pill);cursor:pointer;transition:all .2s;}
+.btn-outline:hover{background:var(--surface2);}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;z-index:500;display:flex;align-items:center;
+  gap:10px;padding:12px 18px;background:var(--ink);border-radius:var(--r-lg);
+  box-shadow:var(--shadow-lg);font-size:.84rem;font-weight:500;color:white;
+  transform:translateY(60px);opacity:0;transition:all .38s var(--ease-spring);max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+@media(max-width:600px){
+  .bilingual-card{grid-template-columns:1fr;}
+  .bl-side.bl-left{border-right:none;border-bottom:1px solid var(--border2);}
+  .audio-opts{grid-template-columns:1fr;}
+  .topbar{padding:0 18px;}
+  .home-wrap,.quiz-wrap,.result-wrap{padding-left:18px;padding-right:18px;}
+}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<div class="app">
+
+<!-- TOPBAR -->
+<nav class="topbar">
+  <div class="logo" onclick="goHome()">
+    <div class="logo-mark">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <circle cx="9" cy="9" r="7" stroke="white" stroke-width="1.5"/>
+        <path d="M5 9h8M9 5c-2 1.5-2 6.5 0 8M9 5c2 1.5 2 6.5 0 8" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span class="logo-text">Talky<em>Lab</em></span>
+  </div>
+  <span class="mod-chip">TRANSLATION TOOLS</span>
+  <div class="topbar-right">
+    <div class="lang-selector">
+      <label>Language</label>
+      <select class="lang-select" id="langSelect" onchange="onLangChange(this.value)">
+        <option value="hi">Hindi</option>
+        <option value="mr">Marathi</option>
+        <option value="ta">Tamil</option>
+        <option value="te">Telugu</option>
+        <option value="kn">Kannada</option>
+        <option value="ml">Malayalam</option>
+        <option value="gu">Gujarati</option>
+        <option value="bn">Bengali</option>
+        <option value="pa">Punjabi</option>
+        <option value="de">German</option>
+        <option value="fr">French</option>
+        <option value="en">English (reverse)</option>
+      </select>
+    </div>
+    <a href="index.html" class="back-link">
+      <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7 2L4 5.5l3 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Back to Lab
+    </a>
+  </div>
+</nav>
+
+<!-- HOME SCREEN -->
+<div class="screen active" id="screen-home">
+<div class="home-wrap">
+
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-eyebrow">Module · Translation Tools</div>
+      <h1 class="hero-title">Bilingual<br><em>sentence</em><br>matching</h1>
+      <p class="hero-body">Hear both languages. Match meaning across scripts. Build deep translation instinct through three modes — sentence matching, audio identification, and spaced flashcards.</p>
+    </div>
+    <div class="hero-right" id="heroPairs"></div>
+  </div>
+
+  <div class="modes-section">
+    <div class="section-label">Choose a mode</div>
+    <div class="mode-grid">
+      <div class="mode-card mc-match" onclick="startMode('match')">
+        <div class="mc-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 5h5M3 9h5M3 13h5M10 5h5M10 9h5M10 13h5" stroke="#c8502a" stroke-width="1.5" stroke-linecap="round"/><path d="M8 7l2 2-2 2" stroke="#c8502a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="mc-title">Sentence Matching</div>
+        <div class="mc-desc">Hear an English sentence. Choose its correct translation from four options. Audio plays in both languages.</div>
+        <div class="mc-tag">5 questions · scored</div>
+      </div>
+      <div class="mode-card mc-audio" onclick="startMode('audio')">
+        <div class="mc-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6" stroke="#2a6bc8" stroke-width="1.5"/><path d="M7 6.5v5l5-2.5-5-2.5z" fill="#2a6bc8"/></svg>
+        </div>
+        <div class="mc-title">Audio Identification</div>
+        <div class="mc-desc">A sentence plays in the regional language. Identify the correct English meaning from four choices.</div>
+        <div class="mc-tag">5 questions · scored</div>
+      </div>
+      <div class="mode-card mc-flash" onclick="startMode('flash')">
+        <div class="mc-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="3" y="3" width="12" height="12" rx="3" stroke="#0a8c7a" stroke-width="1.5"/><path d="M9 6v3l2 2" stroke="#0a8c7a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="mc-title">Flashcard Review</div>
+        <div class="mc-desc">Flip through bilingual flashcards. Tap to reveal the translation. Self-mark Known or Missed.</div>
+        <div class="mc-tag">All 10 pairs · unscored</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">How it works</div>
+  <div class="how-row">
+    <div class="how-step"><div class="how-num">01</div><div class="how-title">Pick a language</div><div class="how-desc">Select from 11 regional languages in the top bar. English is always the base.</div></div>
+    <div class="how-step"><div class="how-num">02</div><div class="how-title">See both sides</div><div class="how-desc">Every card shows the English sentence and the regional translation side by side.</div></div>
+    <div class="how-step"><div class="how-num">03</div><div class="how-title">Hear both</div><div class="how-desc">Each side has its own play button. TTS pronounces in the correct accent.</div></div>
+    <div class="how-step"><div class="how-num">04</div><div class="how-title">Match and score</div><div class="how-desc">Answer questions, track accuracy, and review your results at the end.</div></div>
+  </div>
+
+</div>
+</div>
+
+<!-- QUIZ SCREEN -->
+<div class="screen" id="screen-quiz">
+<div class="quiz-wrap">
+
+  <div class="bc">
+    <button onclick="goHome()">Home</button>
+    <span class="bc-sep">›</span>
+    <span id="bcMode">Matching</span>
+  </div>
+
+  <div class="quiz-header">
+    <div class="quiz-mode-chip" id="modePill">Sentence Matching</div>
+    <div class="qcount">Question <strong id="qNum">1</strong> / 5</div>
+  </div>
+  <div class="prog-outer"><div class="prog-inner prog-match" id="progInner" style="width:0%"></div></div>
+
+  <!-- Bilingual Card -->
+  <div class="bilingual-card" id="biCard">
+    <div class="bl-side bl-left">
+      <div class="bl-lang-row">
+        <span class="bl-lang-name">English</span>
+        <button class="bl-play-btn" id="playEN" onclick="playLang('en')">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 1.5l7 3.5-7 3.5V1.5z" fill="currentColor"/></svg>
+          Play
+        </button>
+      </div>
+      <div class="bl-sentence" id="sentEN">—</div>
+    </div>
+    <div class="bl-side bl-right">
+      <div class="bl-lang-row">
+        <span class="bl-lang-name" id="nativeLangLabel">Hindi</span>
+        <button class="bl-play-btn" id="playNative" onclick="playLang('native')">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 1.5l7 3.5-7 3.5V1.5z" fill="currentColor"/></svg>
+          Play
+        </button>
+      </div>
+      <div class="bl-sentence script-text" id="sentNative">—</div>
+      <div class="reveal-hint" id="revealHint"></div>
+    </div>
+  </div>
+
+  <!-- Exercise area -->
+  <div id="exArea"></div>
+
+  <div class="fb-bar" id="fbBar">
+    <div class="fb-icon" id="fbIcon"></div>
+    <div><div class="fb-ttl" id="fbTtl"></div><div class="fb-dtl" id="fbDtl"></div></div>
+  </div>
+  <button class="act-btn act-check" id="actBtn" onclick="handleAct()">Check</button>
+
+</div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div class="screen" id="screen-result">
+<div class="result-wrap">
+  <div class="res-hero">
+    <span class="res-emoji" id="resEm">🎉</span>
+    <div class="res-title" id="resTtl">Session Complete</div>
+    <div class="res-score" id="resSc">5/5</div>
+    <div class="res-sub" id="resSub">Excellent translation sense!</div>
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-val" id="stCorrect">5</div><div class="stat-lbl">Correct</div></div>
+      <div class="stat-card"><div class="stat-val" id="stAcc">100%</div><div class="stat-lbl">Accuracy</div></div>
+      <div class="stat-card"><div class="stat-val" id="stXP">150</div><div class="stat-lbl">XP Earned</div></div>
+    </div>
+  </div>
+  <div class="recap-label">Your Answers</div>
+  <div class="recap-list" id="recapList"></div>
+  <div class="res-actions">
+    <button class="btn-primary" onclick="retrySession()">↩ Try Again</button>
+    <button class="btn-outline" onclick="goHome()">Back to Modes</button>
+  </div>
+</div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+/* ── DATA ── 10 sentence pairs per language ── */
+const LANG_LABELS={hi:'Hindi',mr:'Marathi',ta:'Tamil',te:'Telugu',kn:'Kannada',
+  ml:'Malayalam',gu:'Gujarati',bn:'Bengali',pa:'Punjabi',de:'German',fr:'French',en:'English'};
+const LANG_VOICE={en:'en-US',hi:'hi-IN',mr:'mr-IN',ta:'ta-IN',te:'te-IN',
+  kn:'kn-IN',ml:'ml-IN',gu:'gu-IN',bn:'bn-IN',pa:'pa-IN',de:'de-DE',fr:'fr-FR'};
+
+const PAIRS = {
+  hi:[
+    {en:'The sun rises in the east every morning.',  native:'सूरज हर सुबह पूर्व दिशा में उगता है।'},
+    {en:'She reads books every night before sleeping.',native:'वह हर रात सोने से पहले किताबें पढ़ती है।'},
+    {en:'The children are playing in the garden.',    native:'बच्चे बगीचे में खेल रहे हैं।'},
+    {en:'Water is essential for all living things.',  native:'पानी सभी जीवित प्राणियों के लिए आवश्यक है।'},
+    {en:'He went to the market to buy vegetables.',   native:'वह सब्ज़ियाँ खरीदने बाज़ार गया।'},
+    {en:'The train arrives at nine in the morning.',  native:'ट्रेन सुबह नौ बजे आती है।'},
+    {en:'My mother cooks delicious food every day.',  native:'मेरी माँ हर रोज़ स्वादिष्ट खाना बनाती है।'},
+    {en:'Birds fly south when winter begins.',        native:'जब सर्दी शुरू होती है तो पक्षी दक्षिण की ओर उड़ते हैं।'},
+    {en:'Education opens the door to opportunities.', native:'शिक्षा अवसरों का द्वार खोलती है।'},
+    {en:'The river flows silently through the valley.',native:'नदी घाटी से होकर चुपचाप बहती है।'},
+  ],
+  mr:[
+    {en:'The sun rises in the east every morning.',  native:'सूर्य दररोज सकाळी पूर्वेला उगवतो।'},
+    {en:'She reads books every night before sleeping.',native:'ती रोज रात्री झोपण्यापूर्वी पुस्तके वाचते।'},
+    {en:'The children are playing in the garden.',    native:'मुले बागेत खेळत आहेत।'},
+    {en:'Water is essential for all living things.',  native:'पाणी सर्व सजीवांसाठी आवश्यक आहे।'},
+    {en:'He went to the market to buy vegetables.',   native:'तो भाजी विकत घ्यायला बाजारात गेला।'},
+    {en:'The train arrives at nine in the morning.',  native:'गाडी सकाळी नऊ वाजता येते।'},
+    {en:'My mother cooks delicious food every day.',  native:'माझी आई रोज चविष्ट जेवण बनवते।'},
+    {en:'Birds fly south when winter begins.',        native:'हिवाळा सुरू होतो तेव्हा पक्षी दक्षिणेला उडतात।'},
+    {en:'Education opens the door to opportunities.', native:'शिक्षण संधींचे दार उघडते।'},
+    {en:'The river flows silently through the valley.',native:'नदी दरीतून शांतपणे वाहते।'},
+  ],
+  ta:[
+    {en:'The sun rises in the east every morning.',  native:'சூரியன் ஒவ்வொரு காலையும் கிழக்கில் உதிக்கிறது.'},
+    {en:'She reads books every night before sleeping.',native:'அவள் தினமும் இரவு தூங்குவதற்கு முன் புத்தகங்கள் படிக்கிறாள்.'},
+    {en:'The children are playing in the garden.',    native:'குழந்தைகள் தோட்டத்தில் விளையாடுகிறார்கள்.'},
+    {en:'Water is essential for all living things.',  native:'நீர் அனைத்து உயிரினங்களுக்கும் இன்றியமையாதது.'},
+    {en:'He went to the market to buy vegetables.',   native:'அவர் காய்கறிகள் வாங்க சந்தைக்கு சென்றார்.'},
+    {en:'The train arrives at nine in the morning.',  native:'ரயில் காலை ஒன்பது மணிக்கு வருகிறது.'},
+    {en:'My mother cooks delicious food every day.',  native:'என் அம்மா தினமும் சுவையான உணவு சமைக்கிறாள்.'},
+    {en:'Birds fly south when winter begins.',        native:'குளிர்காலம் தொடங்கும்போது பறவைகள் தெற்கே பறக்கின்றன.'},
+    {en:'Education opens the door to opportunities.', native:'கல்வி வாய்ப்புகளின் கதவை திறக்கிறது.'},
+    {en:'The river flows silently through the valley.',native:'ஆறு பள்ளத்தாக்கு வழியாக அமைதியாக ஓடுகிறது.'},
+  ],
+  te:[
+    {en:'The sun rises in the east every morning.',  native:'సూర్యుడు ప్రతి ఉదయం తూర్పున ఉదయిస్తాడు.'},
+    {en:'She reads books every night before sleeping.',native:'ఆమె ప్రతి రాత్రి నిద్రపోయే ముందు పుస్తకాలు చదువుతుంది.'},
+    {en:'The children are playing in the garden.',    native:'పిల్లలు తోటలో ఆడుకుంటున్నారు.'},
+    {en:'Water is essential for all living things.',  native:'నీరు అన్ని జీవులకు అవసరం.'},
+    {en:'He went to the market to buy vegetables.',   native:'అతను కూరగాయలు కొనడానికి బజారుకు వెళ్ళాడు.'},
+    {en:'The train arrives at nine in the morning.',  native:'రైలు ఉదయం తొమ్మిది గంటలకు వస్తుంది.'},
+    {en:'My mother cooks delicious food every day.',  native:'మా అమ్మ ప్రతిరోజు రుచికరమైన వంట వండుతుంది.'},
+    {en:'Birds fly south when winter begins.',        native:'శీతాకాలం మొదలైనప్పుడు పక్షులు దక్షిణానికి వెళతాయి.'},
+    {en:'Education opens the door to opportunities.', native:'విద్య అవకాశాల తలుపు తెరుస్తుంది.'},
+    {en:'The river flows silently through the valley.',native:'నది లోయ గుండా నిశ్శబ్దంగా ప్రవహిస్తుంది.'},
+  ],
+  kn:[
+    {en:'The sun rises in the east every morning.',  native:'ಸೂರ್ಯನು ಪ್ರತಿ ಬೆಳಿಗ್ಗೆ ಪೂರ್ವದಲ್ಲಿ ಉದಯಿಸುತ್ತಾನೆ.'},
+    {en:'She reads books every night before sleeping.',native:'ಅವಳು ಪ್ರತಿ ರಾತ್ರಿ ಮಲಗುವ ಮೊದಲು ಪುಸ್ತಕಗಳನ್ನು ಓದುತ್ತಾಳೆ.'},
+    {en:'The children are playing in the garden.',    native:'ಮಕ್ಕಳು ತೋಟದಲ್ಲಿ ಆಡುತ್ತಿದ್ದಾರೆ.'},
+    {en:'Water is essential for all living things.',  native:'ನೀರು ಎಲ್ಲಾ ಜೀವಿಗಳಿಗೆ ಅವಶ್ಯಕ.'},
+    {en:'He went to the market to buy vegetables.',   native:'ಅವನು ತರಕಾರಿ ಕೊಳ್ಳಲು ಮಾರುಕಟ್ಟೆಗೆ ಹೋದನು.'},
+    {en:'The train arrives at nine in the morning.',  native:'ರೈಲು ಬೆಳಿಗ್ಗೆ ಒಂಬತ್ತು ಗಂಟೆಗೆ ಬರುತ್ತದೆ.'},
+    {en:'My mother cooks delicious food every day.',  native:'ನನ್ನ ತಾಯಿ ಪ್ರತಿ ದಿನ ರುಚಿಯಾದ ಆಹಾರ ಬೇಯಿಸುತ್ತಾಳೆ.'},
+    {en:'Birds fly south when winter begins.',        native:'ಚಳಿಗಾಲ ಪ್ರಾರಂಭವಾದಾಗ ಹಕ್ಕಿಗಳು ದಕ್ಷಿಣಕ್ಕೆ ಹಾರುತ್ತವೆ.'},
+    {en:'Education opens the door to opportunities.', native:'ಶಿಕ್ಷಣ ಅವಕಾಶಗಳ ಬಾಗಿಲು ತೆರೆಯುತ್ತದೆ.'},
+    {en:'The river flows silently through the valley.',native:'ನದಿ ಕಣಿವೆಯ ಮೂಲಕ ನಿಶ್ಶಬ್ದವಾಗಿ ಹರಿಯುತ್ತದೆ.'},
+  ],
+  ml:[
+    {en:'The sun rises in the east every morning.',  native:'സൂര്യൻ എല്ലാ രാവിലെയും കിഴക്ക് ഉദിക്കുന്നു.'},
+    {en:'She reads books every night before sleeping.',native:'അവൾ എല്ലാ രാത്രിയും ഉറങ്ങുന്നതിന് മുമ്പ് പുസ്തകങ്ങൾ വായിക്കുന്നു.'},
+    {en:'The children are playing in the garden.',    native:'കുട്ടികൾ തോട്ടത്തിൽ കളിക്കുകയാണ്.'},
+    {en:'Water is essential for all living things.',  native:'ജലം എല്ലാ ജീവജാലങ്ങൾക്കും അത്യാവശ്യമാണ്.'},
+    {en:'He went to the market to buy vegetables.',   native:'അദ്ദേഹം പച്ചക്കറി വാങ്ങാൻ ചന്തയിൽ പോയി.'},
+    {en:'The train arrives at nine in the morning.',  native:'ട്രെയിൻ രാവിലെ ഒൻപത് മണിക്ക് എത്തുന്നു.'},
+    {en:'My mother cooks delicious food every day.',  native:'എന്റെ അമ്മ ദിനംപ്രതി രുചികരമായ ഭക്ഷണം പാകം ചെയ്യുന്നു.'},
+    {en:'Birds fly south when winter begins.',        native:'ശൈത്യകാലം തുടങ്ങുമ്പോൾ പക്ഷികൾ തെക്കോട്ട് പറക്കുന്നു.'},
+    {en:'Education opens the door to opportunities.', native:'വിദ്യാഭ്യാസം അവസരങ്ങളുടെ വാതിൽ തുറക്കുന്നു.'},
+    {en:'The river flows silently through the valley.',native:'നദി താഴ്‌വരയിലൂടെ നിശ്ശബ്ദമായി ഒഴുകുന്നു.'},
+  ],
+  gu:[
+    {en:'The sun rises in the east every morning.',  native:'સૂર્ય દરરોજ સવારે પૂર્વ દિશામાં ઊગે છે.'},
+    {en:'She reads books every night before sleeping.',native:'તે દરરોજ રાત્રે સૂતા પહેલા પુસ્તકો વાંચે છે.'},
+    {en:'The children are playing in the garden.',    native:'બાળકો બગીચામાં રમી રહ્યા છે.'},
+    {en:'Water is essential for all living things.',  native:'પાણી તમામ જીવો માટે આવશ્યક છે.'},
+    {en:'He went to the market to buy vegetables.',   native:'તે શાકભાજી ખરીદવા બજારે ગયો.'},
+    {en:'The train arrives at nine in the morning.',  native:'ટ્રેન સવારે નવ વાગ્યે આવે છે.'},
+    {en:'My mother cooks delicious food every day.',  native:'મારી માં દરરોજ સ્વાદિષ્ટ ભોજન રાંધે છે.'},
+    {en:'Birds fly south when winter begins.',        native:'શિયાળો શરૂ થાય ત્યારે પક્ષીઓ દક્ષિણ તરફ ઉડે છે.'},
+    {en:'Education opens the door to opportunities.', native:'શિક્ષણ તકોનો દ્વાર ખોલે છે.'},
+    {en:'The river flows silently through the valley.',native:'નદી ખીણ વચ્ચેથી શાંત રીતે વહે છે.'},
+  ],
+  bn:[
+    {en:'The sun rises in the east every morning.',  native:'সূর্য প্রতিদিন সকালে পূর্বে ওঠে।'},
+    {en:'She reads books every night before sleeping.',native:'সে প্রতিরাতে ঘুমানোর আগে বই পড়ে।'},
+    {en:'The children are playing in the garden.',    native:'বাচ্চারা বাগানে খেলছে।'},
+    {en:'Water is essential for all living things.',  native:'জল সমস্ত জীবের জন্য প্রয়োজনীয়।'},
+    {en:'He went to the market to buy vegetables.',   native:'সে সবজি কিনতে বাজারে গেল।'},
+    {en:'The train arrives at nine in the morning.',  native:'ট্রেন সকাল নয়টায় আসে।'},
+    {en:'My mother cooks delicious food every day.',  native:'আমার মা প্রতিদিন সুস্বাদু খাবার রান্না করেন।'},
+    {en:'Birds fly south when winter begins.',        native:'শীত শুরু হলে পাখিরা দক্ষিণে উড়ে যায়।'},
+    {en:'Education opens the door to opportunities.', native:'শিক্ষা সুযোগের দরজা খুলে দেয়।'},
+    {en:'The river flows silently through the valley.',native:'নদী উপত্যকার মধ্য দিয়ে নীরবে প্রবাহিত হয়।'},
+  ],
+  pa:[
+    {en:'The sun rises in the east every morning.',  native:'ਸੂਰਜ ਹਰ ਸਵੇਰ ਪੂਰਬ ਵਿੱਚ ਉੱਗਦਾ ਹੈ।'},
+    {en:'She reads books every night before sleeping.',native:'ਉਹ ਹਰ ਰਾਤ ਸੌਣ ਤੋਂ ਪਹਿਲਾਂ ਕਿਤਾਬਾਂ ਪੜ੍ਹਦੀ ਹੈ।'},
+    {en:'The children are playing in the garden.',    native:'ਬੱਚੇ ਬਾਗ਼ ਵਿੱਚ ਖੇਡ ਰਹੇ ਹਨ।'},
+    {en:'Water is essential for all living things.',  native:'ਪਾਣੀ ਸਾਰੇ ਜੀਵਾਂ ਲਈ ਜ਼ਰੂਰੀ ਹੈ।'},
+    {en:'He went to the market to buy vegetables.',   native:'ਉਹ ਸਬਜ਼ੀਆਂ ਖਰੀਦਣ ਬਾਜ਼ਾਰ ਗਿਆ।'},
+    {en:'The train arrives at nine in the morning.',  native:'ਗੱਡੀ ਸਵੇਰੇ ਨੌਂ ਵਜੇ ਆਉਂਦੀ ਹੈ।'},
+    {en:'My mother cooks delicious food every day.',  native:'ਮੇਰੀ ਮਾਂ ਹਰ ਰੋਜ਼ ਸੁਆਦੀ ਖਾਣਾ ਬਣਾਉਂਦੀ ਹੈ।'},
+    {en:'Birds fly south when winter begins.',        native:'ਜਦੋਂ ਸਰਦੀ ਸ਼ੁਰੂ ਹੁੰਦੀ ਹੈ ਤਾਂ ਪੰਛੀ ਦੱਖਣ ਵੱਲ ਉੱਡਦੇ ਹਨ।'},
+    {en:'Education opens the door to opportunities.', native:'ਸਿੱਖਿਆ ਮੌਕਿਆਂ ਦਾ ਦਰਵਾਜ਼ਾ ਖੋਲ੍ਹਦੀ ਹੈ।'},
+    {en:'The river flows silently through the valley.',native:'ਨਦੀ ਘਾਟੀ ਵਿੱਚੋਂ ਚੁੱਪਚਾਪ ਵਗਦੀ ਹੈ।'},
+  ],
+  de:[
+    {en:'The sun rises in the east every morning.',  native:'Die Sonne geht jeden Morgen im Osten auf.'},
+    {en:'She reads books every night before sleeping.',native:'Sie liest jeden Abend vor dem Schlafen Bücher.'},
+    {en:'The children are playing in the garden.',    native:'Die Kinder spielen im Garten.'},
+    {en:'Water is essential for all living things.',  native:'Wasser ist für alle Lebewesen unentbehrlich.'},
+    {en:'He went to the market to buy vegetables.',   native:'Er ging zum Markt, um Gemüse zu kaufen.'},
+    {en:'The train arrives at nine in the morning.',  native:'Der Zug kommt morgens um neun Uhr an.'},
+    {en:'My mother cooks delicious food every day.',  native:'Meine Mutter kocht jeden Tag leckeres Essen.'},
+    {en:'Birds fly south when winter begins.',        native:'Wenn der Winter beginnt, fliegen die Vögel nach Süden.'},
+    {en:'Education opens the door to opportunities.', native:'Bildung öffnet die Tür zu Möglichkeiten.'},
+    {en:'The river flows silently through the valley.',native:'Der Fluss fließt still durch das Tal.'},
+  ],
+  fr:[
+    {en:'The sun rises in the east every morning.',  native:'Le soleil se lève à l\'est chaque matin.'},
+    {en:'She reads books every night before sleeping.',native:'Elle lit des livres chaque soir avant de dormir.'},
+    {en:'The children are playing in the garden.',    native:'Les enfants jouent dans le jardin.'},
+    {en:'Water is essential for all living things.',  native:'L\'eau est essentielle pour tous les êtres vivants.'},
+    {en:'He went to the market to buy vegetables.',   native:'Il est allé au marché acheter des légumes.'},
+    {en:'The train arrives at nine in the morning.',  native:'Le train arrive à neuf heures du matin.'},
+    {en:'My mother cooks delicious food every day.',  native:'Ma mère cuisine de délicieux repas chaque jour.'},
+    {en:'Birds fly south when winter begins.',        native:'Les oiseaux volent vers le sud quand l\'hiver commence.'},
+    {en:'Education opens the door to opportunities.', native:'L\'éducation ouvre la porte aux opportunités.'},
+    {en:'The river flows silently through the valley.',native:'La rivière coule silencieusement à travers la vallée.'},
+  ],
+  en:[
+    {en:'The sun rises in the east every morning.',  native:'The sun rises in the east every morning.'},
+    {en:'She reads books every night before sleeping.',native:'She reads books every night before sleeping.'},
+    {en:'The children are playing in the garden.',    native:'The children are playing in the garden.'},
+    {en:'Water is essential for all living things.',  native:'Water is essential for all living things.'},
+    {en:'He went to the market to buy vegetables.',   native:'He went to the market to buy vegetables.'},
+    {en:'The train arrives at nine in the morning.',  native:'The train arrives at nine in the morning.'},
+    {en:'My mother cooks delicious food every day.',  native:'My mother cooks delicious food every day.'},
+    {en:'Birds fly south when winter begins.',        native:'Birds fly south when winter begins.'},
+    {en:'Education opens the door to opportunities.', native:'Education opens the door to opportunities.'},
+    {en:'The river flows silently through the valley.',native:'The river flows silently through the valley.'},
+  ],
+};
+
+/* ── STATE ── */
+let LANG = localStorage.getItem('tl_tlang') || 'hi';
+let curMode = 'match';
+let qIdx = 0, score = 0, phase = 'check', answered = false;
+let recapData = [], sessionXP = 0;
+let fcIdx = 0, fcKnown = [], fcMissed = [];
+let qOrder = []; // shuffled indices for 5 questions
+
+/* ── INIT ── */
+document.getElementById('langSelect').value = LANG;
+buildHeroPairs();
+
+function onLangChange(v){
+  LANG = v;
+  localStorage.setItem('tl_tlang', v);
+  buildHeroPairs();
+  showToast('Language set to ' + LANG_LABELS[v]);
+}
+window.onLangChange = onLangChange;
+
+function buildHeroPairs(){
+  const pairs = PAIRS[LANG] || PAIRS.hi;
+  const container = document.getElementById('heroPairs');
+  container.innerHTML = '';
+  [0,1,2].forEach(i => {
+    const p = pairs[i];
+    const div = document.createElement('div');
+    div.className = 'mini-pair';
+    div.innerHTML = `
+      <div class="mini-lang">
+        <div class="mini-lang-code">EN</div>
+        <div class="mini-lang-text">${p.en}</div>
+      </div>
+      <div class="mini-lang">
+        <div class="mini-lang-code">${LANG.toUpperCase()}</div>
+        <div class="mini-lang-text script">${p.native}</div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+/* ── SCREENS ── */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+function goHome(){showScreen('home');buildHeroPairs();}
+window.goHome = goHome;
+
+/* ── START MODE ── */
+function startMode(mode){
+  curMode = mode;
+  qIdx = 0; score = 0; phase = 'check'; answered = false;
+  recapData = []; sessionXP = 0;
+  fcIdx = 0; fcKnown = []; fcMissed = [];
+
+  const allIdx = [...Array(10).keys()];
+  shuffle(allIdx);
+  qOrder = allIdx.slice(0, 5);
+
+  showScreen('quiz');
+
+  const modeMap = {match:'Sentence Matching', audio:'Audio Identification', flash:'Flashcard Review'};
+  const chipMap = {match:'qmc-match', audio:'qmc-audio', flash:'qmc-flash'};
+  const progMap = {match:'prog-match', audio:'prog-audio', flash:'prog-flash'};
+
+  document.getElementById('bcMode').textContent = modeMap[mode];
+  const pill = document.getElementById('modePill');
+  pill.className = 'quiz-mode-chip ' + chipMap[mode];
+  pill.textContent = modeMap[mode];
+  document.getElementById('progInner').className = 'prog-inner ' + progMap[mode];
+  document.getElementById('nativeLangLabel').textContent = LANG_LABELS[LANG] || LANG;
+
+  if(mode === 'flash'){
+    document.getElementById('actBtn').style.display = 'none';
+    document.getElementById('fbBar').className = 'fb-bar';
+    loadFlashcard();
+  } else {
+    document.getElementById('actBtn').style.display = 'block';
+    loadQ();
+  }
+}
+window.startMode = startMode;
+
+/* ── LOAD Q ── */
+function loadQ(){
+  answered = false; phase = 'check';
+  const pairs = PAIRS[LANG] || PAIRS.hi;
+  const item = pairs[qOrder[qIdx]];
+
+  document.getElementById('qNum').textContent = qIdx + 1;
+  document.getElementById('progInner').style.width = (qIdx/5*100)+'%';
+
+  document.getElementById('sentEN').textContent = item.en;
+  document.getElementById('sentNative').textContent = item.native;
+  document.getElementById('sentNative').className = 'bl-sentence script-text';
+
+  document.getElementById('fbBar').className = 'fb-bar';
+  const ab = document.getElementById('actBtn');
+  ab.className = 'act-btn act-check'; ab.textContent = 'Check'; ab.disabled = true;
+
+  document.getElementById('playEN').className = 'bl-play-btn';
+  document.getElementById('playNative').className = 'bl-play-btn';
+
+  if(curMode === 'match'){
+    document.getElementById('sentNative').classList.add('hidden-text');
+    document.getElementById('revealHint').textContent = 'Translation hidden — choose the correct one below';
+    buildMatchEx(item, pairs);
+  } else {
+    document.getElementById('revealHint').textContent = '';
+    buildAudioEx(item, pairs);
+    setTimeout(()=>playLang('native'), 500);
+  }
+}
+
+/* ── MATCH EXERCISE ── */
+function buildMatchEx(item, pairs){
+  const area = document.getElementById('exArea');
+  area.innerHTML = '';
+  const inst = document.createElement('div');
+  inst.className = 'match-instruction';
+  inst.textContent = 'Which translation matches the English sentence above?';
+  area.appendChild(inst);
+
+  // build 4 options: correct + 3 random wrong
+  const allNatives = pairs.map(p=>p.native).filter(n=>n!==item.native);
+  shuffle(allNatives);
+  const opts = [item.native, allNatives[0], allNatives[1], allNatives[2]];
+  shuffle(opts);
+
+  const optList = document.createElement('div');
+  optList.className = 'match-options';
+  opts.forEach(opt => {
+    const row = document.createElement('div');
+    row.className = 'match-opt';
+
+    const textSpan = document.createElement('span');
+    textSpan.textContent = opt;
+    textSpan.style.flex = '1';
+
+    const playBtn = document.createElement('button');
+    playBtn.className = 'mo-play';
+    playBtn.innerHTML = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 1l5 3-5 3V1z" fill="currentColor"/></svg>';
+    playBtn.title = 'Hear this option';
+    playBtn.onclick = (e) => {
+      e.stopPropagation();
+      speak(opt, LANG_VOICE[LANG]||'hi-IN', 0.85);
+    };
+
+    row.appendChild(textSpan);
+    row.appendChild(playBtn);
+
+    row.onclick = (e) => {
+      if(answered || e.target === playBtn || playBtn.contains(e.target)) return;
+      document.querySelectorAll('.match-opt').forEach(b=>b.classList.remove('picked'));
+      row.classList.add('picked');
+      row.dataset.val = opt;
+      document.getElementById('actBtn').disabled = false;
+    };
+    optList.appendChild(row);
+  });
+  area.appendChild(optList);
+  area._correct = item.native;
+}
+
+/* ── AUDIO EXERCISE ── */
+function buildAudioEx(item, pairs){
+  const area = document.getElementById('exArea');
+  area.innerHTML = '';
+
+  const allEN = pairs.map(p=>p.en).filter(e=>e!==item.en);
+  shuffle(allEN);
+  const opts = [item.en, allEN[0], allEN[1], allEN[2]];
+  shuffle(opts);
+
+  const inst = document.createElement('div');
+  inst.className = 'audio-instruction';
+  inst.textContent = 'The regional sentence just played. Which English sentence does it mean?';
+
+  const replayBox = document.createElement('div');
+  replayBox.className = 'audio-play-center';
+  const bigBtn = document.createElement('button');
+  bigBtn.className = 'big-play-btn';
+  bigBtn.id = 'bigPlayBtn';
+  bigBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 3.5l13 6.5-13 6.5V3.5z" fill="currentColor"/></svg>';
+  bigBtn.onclick = () => { playLang('native'); };
+  const lbl = document.createElement('div');
+  lbl.className = 'audio-lang-label';
+  lbl.textContent = (LANG_LABELS[LANG]||LANG).toUpperCase();
+  replayBox.appendChild(bigBtn);
+  replayBox.appendChild(lbl);
+
+  const grid = document.createElement('div');
+  grid.className = 'audio-opts';
+  opts.forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'audio-opt';
+    b.textContent = opt;
+    b.onclick = () => {
+      if(answered) return;
+      document.querySelectorAll('.audio-opt').forEach(x=>x.classList.remove('picked'));
+      b.classList.add('picked');
+      document.getElementById('actBtn').disabled = false;
+    };
+    grid.appendChild(b);
+  });
+
+  area.appendChild(inst);
+  area.appendChild(replayBox);
+  area.appendChild(grid);
+  area._correct = item.en;
+}
+
+/* ── CHECK ── */
+function handleAct(){
+  if(phase==='next'){advance();return;}
+  checkAns();
+}
+window.handleAct = handleAct;
+
+function checkAns(){
+  answered = true;
+  const pairs = PAIRS[LANG] || PAIRS.hi;
+  const item = pairs[qOrder[qIdx]];
+  const area = document.getElementById('exArea');
+  let ok = false, userAns = '', correctAns = area._correct;
+
+  if(curMode === 'match'){
+    const picked = document.querySelector('.match-opt.picked');
+    userAns = picked ? picked.dataset.val : '';
+    ok = userAns === item.native;
+    document.querySelectorAll('.match-opt').forEach(b=>{
+      b.disabled = true;
+      if(b.dataset.val === item.native) b.classList.add('ok');
+      else if(b.classList.contains('picked')) b.classList.add('no');
+    });
+    document.getElementById('sentNative').classList.add('revealed');
+    document.getElementById('revealHint').textContent = '';
+  } else {
+    const picked = document.querySelector('.audio-opt.picked');
+    userAns = picked ? picked.textContent : '';
+    ok = userAns === item.en;
+    document.querySelectorAll('.audio-opt').forEach(b=>{
+      b.disabled = true;
+      if(b.textContent === item.en) b.classList.add('ok');
+      else if(b.classList.contains('picked')) b.classList.add('no');
+    });
+  }
+
+  const xp = ok ? 10 + (score * 2) : 0;
+  if(ok){ score++; sessionXP += xp; }
+
+  recapData.push({mode:curMode, en:item.en, native:item.native, ok, userAns, correctAns});
+
+  const fb = document.getElementById('fbBar');
+  fb.className = 'fb-bar show ' + (ok?'ok':'no');
+  document.getElementById('fbIcon').textContent = ok ? '✅' : '❌';
+  document.getElementById('fbTtl').textContent = ok ? 'Correct!' : 'Not quite';
+  document.getElementById('fbDtl').textContent = ok
+    ? 'Great translation sense!'
+    : 'The correct answer was: ' + correctAns.slice(0,80) + (correctAns.length>80?'…':'');
+
+  phase = 'next';
+  const ab = document.getElementById('actBtn');
+  ab.className = 'act-btn ' + (ok?'act-ok':'act-no');
+  ab.textContent = qIdx < 4 ? 'Continue →' : 'See Results →';
+  ab.disabled = false;
+}
+
+function advance(){ if(qIdx<4){qIdx++;loadQ();}else showResult(); }
+
+/* ── FLASHCARD ── */
+function loadFlashcard(){
+  const pairs = PAIRS[LANG] || PAIRS.hi;
+  const totalCards = Math.min(10, pairs.length);
+  answered = false;
+
+  document.getElementById('qNum').textContent = fcIdx + 1;
+  document.getElementById('progInner').style.width = (fcIdx/totalCards*100)+'%';
+
+  const item = pairs[fcIdx];
+  document.getElementById('sentEN').textContent = item.en;
+  document.getElementById('sentNative').textContent = item.native;
+  document.getElementById('sentNative').className = 'bl-sentence script-text';
+  document.getElementById('revealHint').textContent = '';
+
+  const area = document.getElementById('exArea');
+  area.innerHTML = '';
+
+  // dots progress
+  const dots = document.createElement('div');
+  dots.className = 'fc-progress';
+  for(let i=0;i<totalCards;i++){
+    const d = document.createElement('div');
+    d.className = 'fc-dot' + (fcKnown.includes(i)?' known':fcMissed.includes(i)?' missed':'');
+    if(i===fcIdx) d.style.outline='2px solid var(--ink)';
+    dots.appendChild(d);
+  }
+  area.appendChild(dots);
+
+  // flashcard flip
+  const wrap = document.createElement('div');
+  wrap.className = 'flashcard-wrap';
+  const card = document.createElement('div');
+  card.className = 'flashcard';
+  card.id = 'flashcard';
+  card.innerHTML = `
+    <div class="fc-face fc-front">
+      <div class="fc-label">English</div>
+      <div class="fc-text">${item.en}</div>
+      <div class="fc-hint">Tap to reveal ${LANG_LABELS[LANG]} translation</div>
+    </div>
+    <div class="fc-face fc-back">
+      <div class="fc-label">${LANG_LABELS[LANG]}</div>
+      <div class="fc-text">${item.native}</div>
+      <div class="fc-hint">Tap again to flip back</div>
+    </div>`;
+  card.onclick = () => card.classList.toggle('flipped');
+  wrap.appendChild(card);
+  area.appendChild(wrap);
+
+  // know/miss buttons
+  const row = document.createElement('div');
+  row.className = 'fc-row';
+
+  const knowBtn = document.createElement('button');
+  knowBtn.className = 'fc-action fc-know';
+  knowBtn.textContent = 'I knew this ✓';
+  knowBtn.onclick = () => {
+    if(!fcKnown.includes(fcIdx)) fcKnown.push(fcIdx);
+    score++;
+    nextFlashcard();
+  };
+
+  const missBtn = document.createElement('button');
+  missBtn.className = 'fc-action fc-miss';
+  missBtn.textContent = 'I missed this ✗';
+  missBtn.onclick = () => {
+    if(!fcMissed.includes(fcIdx)) fcMissed.push(fcIdx);
+    nextFlashcard();
+  };
+
+  // play both button
+  const playRow = document.createElement('div');
+  playRow.style.cssText = 'display:flex;gap:8px;';
+
+  const playENBtn = document.createElement('button');
+  playENBtn.className = 'fc-action';
+  playENBtn.textContent = '▶ English';
+  playENBtn.style.flex = '1';
+  playENBtn.onclick = () => speak(item.en, 'en-US', 0.85);
+
+  const playNativeBtn = document.createElement('button');
+  playNativeBtn.className = 'fc-action';
+  playNativeBtn.textContent = '▶ ' + (LANG_LABELS[LANG]||LANG);
+  playNativeBtn.style.flex = '1';
+  playNativeBtn.onclick = () => speak(item.native, LANG_VOICE[LANG]||'hi-IN', 0.85);
+
+  playRow.appendChild(playENBtn);
+  playRow.appendChild(playNativeBtn);
+
+  row.appendChild(knowBtn);
+  row.appendChild(missBtn);
+  area.appendChild(playRow);
+  area.appendChild(row);
+
+  document.getElementById('qcount') && (document.getElementById('qcount').textContent = (fcIdx+1) + ' / ' + totalCards);
+}
+
+function nextFlashcard(){
+  const totalCards = Math.min(10, (PAIRS[LANG]||PAIRS.hi).length);
+  if(fcIdx < totalCards - 1){
+    fcIdx++;
+    loadFlashcard();
+  } else {
+    showFlashResult();
+  }
+}
+
+function showFlashResult(){
+  const total = fcKnown.length + fcMissed.length;
+  document.getElementById('resEm').textContent = fcKnown.length === total ? '🌟' : fcKnown.length >= total*0.7 ? '👍' : '📖';
+  document.getElementById('resTtl').textContent = 'Flashcard Round Done';
+  document.getElementById('resSc').textContent = fcKnown.length + '/' + total + ' known';
+  document.getElementById('resSub').textContent = fcMissed.length === 0
+    ? 'Perfect recall — all cards known!'
+    : fcMissed.length + ' card' + (fcMissed.length>1?'s':'')+' to review next time.';
+  document.getElementById('stCorrect').textContent = fcKnown.length;
+  document.getElementById('stAcc').textContent = Math.round(fcKnown.length/total*100)+'%';
+  document.getElementById('stXP').textContent = fcKnown.length * 8;
+
+  const list = document.getElementById('recapList');
+  list.innerHTML = '';
+  const pairs = PAIRS[LANG]||PAIRS.hi;
+  pairs.slice(0,10).forEach((p,i) => {
+    const known = fcKnown.includes(i);
+    const el = document.createElement('div');
+    el.className = 'recap-item';
+    el.innerHTML = `
+      <div class="ri-num">${i+1}</div>
+      <div class="ri-body">
+        <div class="ri-mode">Flashcard</div>
+        <div class="ri-en">${p.en}</div>
+        <div class="ri-native">${p.native}</div>
+      </div>
+      <div class="ri-icon">${known?'✅':'🔄'}</div>`;
+    list.appendChild(el);
+  });
+
+  document.getElementById('progInner').style.width='100%';
+  showScreen('result');
+}
+
+/* ── RESULT ── */
+function showResult(){
+  document.getElementById('resEm').textContent = score===5?'🏆':score>=4?'🎉':score>=3?'👍':'📖';
+  document.getElementById('resTtl').textContent = score>=4?'Well done!':'Keep going!';
+  document.getElementById('resSc').textContent = score + '/5';
+  document.getElementById('resSub').textContent = score===5?'Perfect translation matching!'
+    :score>=4?'Strong bilingual sense!'
+    :score>=3?'Good — review the missed ones!'
+    :'Keep practising — it gets easier!';
+  document.getElementById('stCorrect').textContent = score;
+  document.getElementById('stAcc').textContent = Math.round(score/5*100)+'%';
+  document.getElementById('stXP').textContent = sessionXP;
+
+  const list = document.getElementById('recapList');
+  list.innerHTML = '';
+  recapData.forEach((r,i) => {
+    const el = document.createElement('div');
+    el.className = 'recap-item';
+    el.innerHTML = `
+      <div class="ri-num">${i+1}</div>
+      <div class="ri-body">
+        <div class="ri-mode">${r.mode === 'match' ? 'Sentence Match' : 'Audio ID'}</div>
+        <div class="ri-en">${r.en}</div>
+        <div class="ri-native">${r.native}</div>
+        ${!r.ok?`<div class="ri-ans no">✗ You answered: ${(r.userAns||'—').slice(0,60)}</div>`:''}
+      </div>
+      <div class="ri-icon">${r.ok?'✅':'❌'}</div>`;
+    list.appendChild(el);
+  });
+
+  document.getElementById('progInner').style.width='100%';
+  showScreen('result');
+}
+
+function retrySession(){ startMode(curMode); }
+window.retrySession = retrySession;
+
+/* ── AUDIO ── */
+let currentUtterance = null;
+
+function speak(text, lang, rate){
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang; u.rate = rate || 0.85;
+  currentUtterance = u;
+  speechSynthesis.speak(u);
+  return u;
+}
+
+function playLang(side){
+  const pairs = PAIRS[LANG]||PAIRS.hi;
+  const item = curMode==='flash' ? pairs[fcIdx] : pairs[qOrder[qIdx]];
+  if(!item) return;
+
+  const enBtn = document.getElementById('playEN');
+  const natBtn = document.getElementById('playNative');
+  const bigBtn = document.getElementById('bigPlayBtn');
+
+  speechSynthesis.cancel();
+
+  if(side === 'en'){
+    enBtn && (enBtn.className = 'bl-play-btn playing');
+    const u = speak(item.en, 'en-US', 0.85);
+    u.onend = u.onerror = () => enBtn && (enBtn.className = 'bl-play-btn');
+  } else {
+    natBtn && (natBtn.className = 'bl-play-btn playing');
+    bigBtn && (bigBtn.className = 'big-play-btn playing');
+    const u = speak(item.native, LANG_VOICE[LANG]||'hi-IN', 0.82);
+    u.onend = u.onerror = () => {
+      natBtn && (natBtn.className = 'bl-play-btn');
+      bigBtn && (bigBtn.className = 'big-play-btn');
+    };
+  }
+}
+window.playLang = playLang;
+
+/* ── TOAST ── */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+/* ── HELPERS ── */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+/* ── QCOUNT fix for flash ── */
+const origQNum = document.getElementById('qNum');
+</script>
+</body>
+</html>

@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Listen &amp; Write — TalkyLab</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="lw-datamodule2.js"></script>
+<style>
+:root {
+  --bg:      #06071a;
+  --panel:   rgba(255,255,255,0.04);
+  --border:  rgba(255,255,255,0.09);
+  --border2: rgba(255,255,255,0.15);
+  --text:    #eef0ff;
+  --muted:   rgba(238,240,255,0.55);
+  --dim:     rgba(238,240,255,0.28);
+  --blue:    #4f8ef7;
+  --cyan:    #43e8d8;
+  --violet:  #9b6dff;
+  --green:   #2ddc82;
+  --gold:    #f5c842;
+  --rose:    #ff6b9d;
+  --ease:    cubic-bezier(0.34,1.56,0.64,1);
+  --eout:    cubic-bezier(0.22,1,0.36,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+#starCanvas{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.blob{position:fixed;border-radius:50%;filter:blur(90px);opacity:0.14;pointer-events:none;z-index:0;animation:blobFloat 16s ease-in-out infinite alternate;}
+.b1{width:480px;height:480px;background:#ff6b9d;top:-100px;left:-80px;animation-delay:0s;}
+.b2{width:380px;height:380px;background:#9b6dff;bottom:-80px;right:-60px;animation-delay:-6s;}
+.b3{width:260px;height:260px;background:#43e8d8;top:40%;left:55%;animation-delay:-11s;}
+@keyframes blobFloat{from{transform:translate(0,0) scale(1)}to{transform:translate(28px,36px) scale(1.07)}}
+body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.025;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+.shell{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:62px;background:rgba(6,7,26,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);gap:14px;}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.logo-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--rose),var(--violet));display:flex;align-items:center;justify-content:center;}
+.logo-mark svg{width:18px;height:18px;}
+.logo-name{font-size:1rem;font-weight:800;color:var(--text);}
+.logo-name em{font-style:normal;color:var(--rose);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.nav-pill{display:flex;align-items:center;gap:6px;padding:5px 13px;border-radius:999px;font-size:0.76rem;font-weight:700;border:1px solid;}
+.np-xp{background:rgba(245,200,66,0.08);border-color:rgba(245,200,66,0.25);color:var(--gold);}
+.np-st{background:rgba(255,107,157,0.08);border-color:rgba(255,107,157,0.25);color:var(--rose);}
+.back-link{display:flex;align-items:center;gap:5px;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);font-size:0.78rem;font-weight:600;text-decoration:none;transition:all 0.2s;}
+.back-link:hover{background:rgba(255,255,255,0.09);color:var(--text);}
+
+/* PAGE HEADER */
+.page-head{max-width:1080px;margin:0 auto;width:100%;padding:28px 32px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+.ph-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;background:rgba(255,107,157,0.08);border:1px solid rgba(255,107,157,0.2);font-size:0.65rem;font-weight:800;color:var(--rose);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+.ph-tag .dot{width:5px;height:5px;border-radius:50%;background:var(--rose);animation:blink 2s ease infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.ph-title{font-size:clamp(1.7rem,3vw,2.4rem);font-weight:800;line-height:1.1;letter-spacing:-0.8px;}
+.ph-title .gr{background:linear-gradient(90deg,var(--rose),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.ph-sub{margin-top:8px;font-size:0.86rem;color:var(--muted);max-width:500px;line-height:1.6;}
+.ph-tags{display:flex;gap:7px;margin-top:14px;flex-wrap:wrap;}
+.ph-badge{display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:999px;font-size:0.7rem;font-weight:700;background:rgba(255,255,255,0.04);border:1px solid var(--border);}
+.ph-badge.b-rose{background:rgba(255,107,157,0.08);border-color:rgba(255,107,157,0.2);color:var(--rose);}
+.ph-badge.b-violet{background:rgba(155,109,255,0.08);border-color:rgba(155,109,255,0.2);color:var(--violet);}
+.ph-badge.b-gold{background:rgba(245,200,66,0.08);border-color:rgba(245,200,66,0.2);color:var(--gold);}
+.ph-badge.b-cyan{background:rgba(67,232,216,0.08);border-color:rgba(67,232,216,0.2);color:var(--cyan);}
+
+/* STUDENT BAR */
+.student-bar{max-width:1080px;margin:0 auto 0;width:100%;padding:0 32px 22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.stu-label{font-size:0.72rem;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;flex-shrink:0;}
+.stu-input{padding:8px 16px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;font-weight:600;outline:none;transition:border-color 0.2s;width:200px;}
+.stu-input::placeholder{color:var(--dim);}
+.stu-input:focus{border-color:rgba(255,107,157,0.4);}
+
+/* MAIN GRID */
+.main{max-width:1080px;margin:0 auto;width:100%;padding:0 32px 60px;display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;}
+@media(max-width:860px){.main{grid-template-columns:1fr;padding:0 16px 60px;}.page-head,.student-bar{padding-left:16px;padding-right:16px;}}
+
+/* CARD */
+.card{background:rgba(255,255,255,0.032);border:1px solid var(--border);border-radius:20px;overflow:hidden;}
+.card+.card{margin-top:16px;}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.card-title{font-size:0.88rem;font-weight:700;color:var(--text);}
+
+/* SELECTORS */
+.sel-row{display:flex;gap:8px;flex-wrap:wrap;}
+.mode-chip{padding:7px 16px;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted);font-size:0.78rem;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:5px;font-family:'Plus Jakarta Sans',sans-serif;}
+.mode-chip:hover{border-color:rgba(155,109,255,0.3);color:var(--text);}
+.mode-chip.active{background:rgba(155,109,255,0.12);border-color:var(--violet);color:var(--violet);}
+.diff-chip{padding:6px 14px;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted);font-size:0.76rem;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:'Plus Jakarta Sans',sans-serif;}
+.diff-chip[data-d="easy"].active{background:rgba(45,220,130,0.1);border-color:var(--green);color:var(--green);}
+.diff-chip[data-d="medium"].active{background:rgba(245,200,66,0.1);border-color:var(--gold);color:var(--gold);}
+.diff-chip[data-d="hard"].active{background:rgba(255,107,157,0.1);border-color:var(--rose);color:var(--rose);}
+.diff-chip:hover:not(.active){border-color:var(--border2);color:var(--text);}
+
+/* Q PROGRESS — dots sized for 10 */
+.q-dots{display:flex;gap:4px;padding:14px 20px 0;}
+.q-dot{flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,0.07);transition:all 0.4s var(--ease);}
+.q-dot.done{background:var(--green);}
+.q-dot.wrong{background:var(--rose);}
+.q-dot.active{background:rgba(155,109,255,0.7);}
+.q-label{padding:5px 20px 0;font-size:0.68rem;color:var(--dim);font-weight:600;}
+
+/* LISTEN BUTTON */
+.listen-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:999px;background:rgba(67,232,216,0.08);border:1px solid rgba(67,232,216,0.25);color:var(--cyan);font-family:'Plus Jakarta Sans',sans-serif;font-size:0.84rem;font-weight:700;cursor:pointer;transition:all 0.2s var(--ease);}
+.listen-btn:hover:not(:disabled){background:rgba(67,232,216,0.15);transform:translateY(-2px);}
+.listen-btn.playing{animation:listenPulse 1s ease infinite;}
+.listen-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none!important;}
+@keyframes listenPulse{0%,100%{box-shadow:0 0 0 0 rgba(67,232,216,0.3)}50%{box-shadow:0 0 0 8px rgba(67,232,216,0)}}
+.wave{display:flex;align-items:center;gap:2px;height:14px;}
+.wave-b{width:3px;border-radius:2px;background:var(--cyan);}
+.wave-b:nth-child(1){height:5px;animation:wa 0.8s 0s ease infinite;}
+.wave-b:nth-child(2){height:10px;animation:wa 0.8s 0.1s ease infinite;}
+.wave-b:nth-child(3){height:14px;animation:wa 0.8s 0.2s ease infinite;}
+.wave-b:nth-child(4){height:8px;animation:wa 0.8s 0.15s ease infinite;}
+.wave-b:nth-child(5){height:11px;animation:wa 0.8s 0.05s ease infinite;}
+@keyframes wa{0%,100%{transform:scaleY(0.5)}50%{transform:scaleY(1)}}
+.listen-count{font-size:0.7rem;color:var(--dim);font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;}
+
+/* MCQ */
+.mcq-wrap{display:flex;flex-direction:column;gap:10px;}
+.mcq-opt{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:14px;background:rgba(255,255,255,0.025);border:1px solid var(--border);cursor:pointer;transition:all 0.2s var(--ease);}
+.mcq-opt:hover:not(.disabled){border-color:rgba(155,109,255,0.35);background:rgba(155,109,255,0.06);transform:translateX(4px);}
+.mcq-opt.selected{border-color:var(--violet);background:rgba(155,109,255,0.1);}
+.mcq-opt.correct{border-color:var(--green);background:rgba(45,220,130,0.08);}
+.mcq-opt.wrong{border-color:var(--rose);background:rgba(255,107,157,0.08);}
+.mcq-opt.disabled{cursor:default;}
+.opt-letter{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:700;color:var(--muted);flex-shrink:0;transition:all 0.2s;}
+.mcq-opt.selected .opt-letter{background:rgba(155,109,255,0.2);border-color:var(--violet);color:var(--violet);}
+.mcq-opt.correct .opt-letter{background:rgba(45,220,130,0.2);border-color:var(--green);color:var(--green);}
+.mcq-opt.wrong .opt-letter{background:rgba(255,107,157,0.2);border-color:var(--rose);color:var(--rose);}
+.opt-text{font-size:0.92rem;color:var(--text);}
+
+/* FEEDBACK */
+.fb-box{margin-top:14px;padding:12px 16px;border-radius:12px;display:none;animation:fadeUp 0.3s var(--eout);font-size:0.82rem;line-height:1.5;}
+.fb-box.show{display:flex;gap:10px;align-items:flex-start;}
+.fb-box.correct{background:rgba(45,220,130,0.06);border:1px solid rgba(45,220,130,0.2);color:var(--green);}
+.fb-box.wrong{background:rgba(255,107,157,0.06);border:1px solid rgba(255,107,157,0.2);color:var(--rose);}
+.fb-icon{font-size:1rem;flex-shrink:0;margin-top:1px;}
+.fb-text{color:var(--muted);line-height:1.6;}
+.fb-text strong{color:var(--text);}
+
+/* TEXTAREA */
+.q-textarea{width:100%;background:rgba(255,255,255,0.025);border:1px solid var(--border);border-radius:14px;padding:14px 18px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.95rem;color:var(--text);resize:vertical;min-height:100px;outline:none;transition:border-color 0.2s;line-height:1.7;}
+.q-textarea:focus{border-color:rgba(67,232,216,0.35);}
+.q-textarea::placeholder{color:var(--dim);}
+.q-textarea.grammar-ta:focus{border-color:rgba(245,200,66,0.35);}
+.q-textarea.essay-ta:focus{border-color:rgba(155,109,255,0.35);}
+.word-count{font-size:0.68rem;color:var(--dim);font-weight:600;margin-top:6px;display:flex;justify-content:space-between;}
+
+/* ESSAY PROMPT */
+.essay-prompt{background:rgba(155,109,255,0.06);border:1px solid rgba(155,109,255,0.2);border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:0.88rem;color:var(--muted);line-height:1.6;}
+.essay-prompt strong{color:var(--violet);}
+
+/* AI RESULT */
+.ai-result{margin-top:14px;display:none;animation:fadeUp 0.4s var(--eout);}
+.ai-result.show{display:block;}
+.ai-loading{display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:14px;font-size:0.84rem;color:var(--muted);}
+.ai-spinner{width:18px;height:18px;border:2px solid rgba(155,109,255,0.2);border-top-color:var(--violet);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-inner{background:rgba(255,255,255,0.025);border:1px solid var(--border);border-radius:14px;padding:16px 18px;}
+.ai-score-row{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.ai-score-num{font-size:2rem;font-weight:800;line-height:1;}
+.ai-score-num.great{color:var(--green);}
+.ai-score-num.good{color:var(--gold);}
+.ai-score-num.retry{color:var(--rose);}
+.ai-score-lbl{font-size:0.78rem;font-weight:700;padding:3px 10px;border-radius:999px;}
+.ai-score-lbl.great{background:rgba(45,220,130,0.12);color:var(--green);}
+.ai-score-lbl.good{background:rgba(245,200,66,0.12);color:var(--gold);}
+.ai-score-lbl.retry{background:rgba(255,107,157,0.12);color:var(--rose);}
+.ai-section{margin-bottom:12px;}
+.ai-sec-title{font-size:0.6rem;font-weight:700;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;}
+.ai-text{font-size:0.84rem;color:var(--muted);line-height:1.6;}
+.ai-corrected{font-size:0.88rem;font-weight:600;color:var(--green);background:rgba(45,220,130,0.07);border:1px solid rgba(45,220,130,0.2);border-radius:10px;padding:10px 14px;line-height:1.6;margin-top:4px;}
+.ai-issue{display:flex;gap:9px;padding:9px 12px;background:rgba(255,107,157,0.05);border:1px solid rgba(255,107,157,0.15);border-radius:10px;margin-bottom:6px;font-size:0.78rem;color:var(--muted);line-height:1.5;}
+
+/* NAV ROW */
+.nav-row{padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+
+/* BTNS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 22px;border-radius:999px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.84rem;font-weight:700;cursor:pointer;border:none;transition:all 0.2s var(--ease);}
+.btn:active{transform:scale(0.96);}
+.btn:disabled{opacity:0.35;cursor:default;transform:none!important;}
+.btn-check{background:linear-gradient(135deg,var(--rose),var(--violet));color:#fff;box-shadow:0 6px 22px rgba(255,107,157,0.25);}
+.btn-check:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 28px rgba(255,107,157,0.38);}
+.btn-next{background:rgba(45,220,130,0.1);border:1px solid rgba(45,220,130,0.3);color:var(--green);}
+.btn-next:hover:not(:disabled){background:rgba(45,220,130,0.18);transform:translateY(-2px);}
+.btn-ai{background:rgba(155,109,255,0.1);border:1px solid rgba(155,109,255,0.3);color:var(--violet);}
+.btn-ai:hover:not(:disabled){background:rgba(155,109,255,0.18);transform:translateY(-2px);}
+.btn-pdf{background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.3);color:var(--gold);}
+.btn-pdf:hover{background:rgba(245,200,66,0.18);transform:translateY(-2px);}
+.btn-ghost{background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--muted);}
+.btn-ghost:hover{background:rgba(255,255,255,0.09);color:var(--text);}
+
+/* RESULTS */
+.results-screen{padding:32px 20px;text-align:center;display:none;animation:fadeUp 0.5s var(--eout);}
+.results-screen.show{display:block;}
+.res-trophy{font-size:3rem;margin-bottom:12px;}
+.res-score{font-size:3.5rem;font-weight:800;line-height:1;margin-bottom:6px;}
+.res-score.great{color:var(--green);}
+.res-score.good{color:var(--gold);}
+.res-score.retry{color:var(--rose);}
+.res-label{font-size:0.88rem;color:var(--muted);margin-bottom:22px;}
+.res-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:22px;}
+.res-card{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;}
+.res-val{font-size:1.4rem;font-weight:800;}
+.res-val.cyan{color:var(--cyan)}.res-val.green{color:var(--green)}.res-val.gold{color:var(--gold);}
+.res-lbl{font-size:0.62rem;color:var(--dim);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:4px;}
+.res-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
+/* SIDEBAR */
+.side{display:flex;flex-direction:column;gap:16px;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-box{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
+.stat-val{font-size:1.4rem;font-weight:800;line-height:1;}
+.stat-val.blue{color:var(--blue);}.stat-val.green{color:var(--green);}.stat-val.gold{color:var(--gold);}.stat-val.violet{color:var(--violet);}.stat-val.rose{color:var(--rose);}.stat-val.cyan{color:var(--cyan);}
+.stat-lbl{font-size:0.58rem;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:3px;}
+.sess-list{display:flex;flex-direction:column;}
+.sess-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.sess-row:last-child{border-bottom:none;}
+.sess-k{font-size:0.74rem;color:var(--muted);}
+.sess-v{font-size:0.78rem;font-weight:700;color:var(--text);}
+
+.q-area{padding:20px;}
+.q-num{font-size:0.68rem;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.q-text{font-size:1rem;font-weight:600;color:var(--text);line-height:1.6;margin-bottom:18px;}
+.listen-row{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;z-index:999;display:flex;align-items:center;gap:10px;padding:12px 18px;background:rgba(20,22,42,0.95);border:1px solid var(--border2);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.5);font-size:0.84rem;font-weight:600;color:var(--text);transform:translateY(80px);opacity:0;transition:all 0.4s var(--ease);max-width:300px;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* CONFETTI */
+.cp{position:fixed;top:-10px;width:9px;height:9px;border-radius:2px;pointer-events:none;z-index:9999;animation:cfFall linear forwards;}
+@keyframes cfFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+/* CORRECT POPUP */
+.correct-overlay{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;background:rgba(6,7,26,0.75);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity 0.3s;}
+.correct-overlay.show{opacity:1;pointer-events:all;}
+.correct-popup{background:linear-gradient(135deg,rgba(20,22,42,0.98),rgba(30,34,60,0.98));border:1px solid rgba(45,220,130,0.35);border-radius:28px;padding:36px 44px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 60px rgba(45,220,130,0.12);transform:scale(0.8) translateY(30px);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);max-width:380px;width:90%;}
+.correct-overlay.show .correct-popup{transform:scale(1) translateY(0);}
+.cp-emoji{font-size:3.8rem;margin-bottom:12px;display:block;animation:emojiPop 0.5s var(--ease) 0.1s both;}
+@keyframes emojiPop{from{transform:scale(0) rotate(-20deg)}to{transform:scale(1) rotate(0)}}
+.cp-title{font-size:1.6rem;font-weight:800;color:var(--green);margin-bottom:6px;letter-spacing:-0.5px;}
+.cp-msg{font-size:0.88rem;color:var(--muted);margin-bottom:22px;line-height:1.6;}
+.cp-score{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:999px;background:rgba(45,220,130,0.1);border:1px solid rgba(45,220,130,0.3);font-size:0.84rem;font-weight:700;color:var(--green);margin-bottom:22px;}
+.cp-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:999px;background:linear-gradient(135deg,var(--green),var(--cyan));color:#06071a;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;font-weight:800;border:none;cursor:pointer;transition:all 0.2s var(--ease);}
+.cp-btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(45,220,130,0.3);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+footer{border-top:1px solid var(--border);padding:20px 32px;text-align:center;color:var(--dim);font-size:0.75rem;margin-top:auto;}
+</style>
+</head>
+<body>
+<canvas id="starCanvas"></canvas>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+<div class="toast" id="toast"></div>
+
+<!-- CORRECT POPUP -->
+<div class="correct-overlay" id="correctOverlay">
+  <div class="correct-popup">
+    <span class="cp-emoji" id="cpEmoji">🌟</span>
+    <div class="cp-title" id="cpTitle">Correct!</div>
+    <div class="cp-msg" id="cpMsg">Great job — keep it up!</div>
+    <div class="cp-score" id="cpScore">+15 XP</div>
+    <button class="cp-btn" onclick="closePopupAndNext()">Next Question →</button>
+  </div>
+</div>
+
+<div class="shell">
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="index.html" class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M10 3L3 7v6l7 4 7-4V7L10 3z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M10 7v6M7 8.5l3 1.5 3-1.5" stroke="rgba(255,107,157,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="logo-name">Talky<em>Lab</em></span>
+  </a>
+  <div class="nav-right">
+    <div class="nav-pill np-xp">⭐ <span id="topXP">2,450 XP</span></div>
+    <div class="nav-pill np-st">🔥 <span id="topStreak">12</span></div>
+    <a href="module.html" class="back-link">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L3 6l4.5 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Back
+    </a>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-head">
+  <div>
+    <div class="ph-tag"><span class="dot"></span>MODULE 02</div>
+    <div class="ph-title">Listen &amp; <span class="gr">Write</span></div>
+    <p class="ph-sub">Click Listen to hear Indian English audio, then answer MCQs, write dictations, compose essays, and get real AI grammar feedback.</p>
+    <div class="ph-tags">
+      <span class="ph-badge b-rose"   id="gradeBadge">Grade —</span>
+      <span class="ph-badge b-violet" id="modeBadge">🎧 MCQ</span>
+      <span class="ph-badge b-gold"   id="diffBadge">⭐ Easy</span>
+      <span class="ph-badge b-cyan">🇮🇳 Indian English Voice</span>
+    </div>
+  </div>
+  <button class="btn btn-pdf" onclick="downloadPDF()">
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 11h10M7 2v7M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Download Report
+  </button>
+</div>
+
+<!-- STUDENT BAR -->
+<div class="student-bar">
+  <span class="stu-label">Student Name</span>
+  <input class="stu-input" id="stuName" type="text" placeholder="Enter student name…" maxlength="40"/>
+  <span class="stu-label" style="margin-left:12px;">Roll No.</span>
+  <input class="stu-input" id="stuRoll" type="text" placeholder="Roll no." maxlength="20" style="width:120px;"/>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+<div>
+<div class="card" style="animation:fadeUp 0.5s var(--eout) 0.1s both;">
+
+  <!-- MODE + DIFFICULTY ONLY — no grade selector -->
+  <div class="card-head">
+    <span class="card-title">Mode</span>
+    <div class="sel-row" id="modeRow"></div>
+  </div>
+  <div class="card-head" style="border-top:1px solid var(--border);">
+    <span class="card-title">Difficulty</span>
+    <div class="sel-row" id="diffRow"></div>
+  </div>
+
+  <!-- PROGRESS — 10 dots -->
+  <div class="q-dots" id="qDots"></div>
+  <div class="q-label" id="qLabel">Question 1 of 10</div>
+
+  <!-- QUESTION BODY -->
+  <div id="questionBody">
+    <div class="q-area" style="color:var(--dim);font-size:0.88rem;">Loading questions…</div>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div class="results-screen" id="resultsScreen">
+    <div class="res-trophy" id="resTrophy">🏆</div>
+    <div class="res-score" id="resScore">—</div>
+    <div class="res-label" id="resLabel">—</div>
+    <div class="res-grid">
+      <div class="res-card"><div class="res-val cyan"  id="resCorrect">—</div><div class="res-lbl">Correct</div></div>
+      <div class="res-card"><div class="res-val green" id="resAcc">—</div><div class="res-lbl">Accuracy</div></div>
+      <div class="res-card"><div class="res-val gold"  id="resXP">—</div><div class="res-lbl">XP Earned</div></div>
+    </div>
+    <div class="res-actions">
+      <button class="btn btn-ghost" onclick="retryQuiz()">↺ Try Again</button>
+      <button class="btn btn-next" id="resNextBtn" onclick="nextLevel()">Next Level →</button>
+      <button class="btn btn-pdf" onclick="downloadPDF()">📄 Report</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="side">
+  <div class="card" style="animation:fadeUp 0.5s var(--eout) 0.2s both;">
+    <div class="card-head"><span class="card-title">Session Score</span></div>
+    <div class="card-body" style="padding:14px;">
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-val cyan"  id="sCorrect">0</div><div class="stat-lbl">Correct</div></div>
+        <div class="stat-box"><div class="stat-val rose"  id="sWrong">0</div><div class="stat-lbl">Wrong</div></div>
+        <div class="stat-box"><div class="stat-val gold"  id="sXP">+0</div><div class="stat-lbl">XP Earned</div></div>
+        <div class="stat-box"><div class="stat-val green" id="sAcc">—</div><div class="stat-lbl">Accuracy</div></div>
+      </div>
+      <div class="sess-list" style="margin-top:12px;">
+        <div class="sess-row"><span class="sess-k">Session Time</span>    <span class="sess-v" id="sessTime">0:00</span></div>
+        <div class="sess-row"><span class="sess-k">Grade</span>            <span class="sess-v" id="sessGrade">—</span></div>
+        <div class="sess-row"><span class="sess-k">Mode</span>             <span class="sess-v" id="sessMode">MCQ</span></div>
+        <div class="sess-row"><span class="sess-k">Difficulty</span>       <span class="sess-v" id="sessDiff">Easy</span></div>
+        <div class="sess-row"><span class="sess-k">Questions Done</span>   <span class="sess-v" id="sessDone">0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="animation:fadeUp 0.5s var(--eout) 0.3s both;border-color:rgba(255,107,157,0.2);">
+    <div class="card-body" style="padding:16px 18px;">
+      <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:5px;">📄 Session Report</div>
+      <div style="font-size:0.74rem;color:var(--muted);margin-bottom:14px;line-height:1.55;">Download your report with all questions, answers, scores, and AI feedback.</div>
+      <div style="display:flex;flex-direction:column;gap:5px;font-size:0.72rem;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--dim);">Student</span><span style="font-weight:700;" id="rpName">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--dim);">Grade</span><span style="font-weight:700;" id="rpGrade">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--dim);">Mode</span><span style="font-weight:700;" id="rpMode">MCQ</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--dim);">Difficulty</span><span style="font-weight:700;" id="rpDiff">Easy</span></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:var(--dim);">Score</span><span style="font-weight:700;color:var(--green);" id="rpAcc">—</span></div>
+      </div>
+      <button class="btn btn-pdf" style="width:100%;justify-content:center;" onclick="downloadPDF()">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 11h10M7 2v7M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Download PDF Report
+      </button>
+    </div>
+  </div>
+</div>
+</div><!-- /main -->
+
+<footer>TalkyLab Language Lab — Module 02: Listen &amp; Write — AI-Powered Educational Platform</footer>
+</div><!-- /shell -->
+
+<script>
+/* ══════════════════════════════════════
+   CONSTANTS
+══════════════════════════════════════ */
+const TOTAL_Q = 10; // single source of truth
+
+const GRADE_LABELS = {
+  jr_kg:'Jr KG', sr_kg:'Sr KG',
+  '1':'Grade 1','2':'Grade 2','3':'Grade 3','4':'Grade 4','5':'Grade 5',
+  '6':'Grade 6','7':'Grade 7','8':'Grade 8','9':'Grade 9','10':'Grade 10',
+  '11':'Grade 11','12':'Grade 12'
+};
+
+/* ══════════════════════════════════════
+   RESOLVE GRADE — URL ?grade=3 → localStorage → default
+   Index page links: listen-write.html?grade=5
+══════════════════════════════════════ */
+const _urlGrade = new URLSearchParams(location.search).get('grade');
+const grade     = (_urlGrade && (typeof MCQ_BANK === 'undefined' || MCQ_BANK[_urlGrade]))
+                  ? _urlGrade
+                  : (localStorage.getItem('selectedGrade') || 'jr_kg');
+localStorage.setItem('selectedGrade', grade);
+const gradeLabel = GRADE_LABELS[grade] || ('Grade ' + grade);
+
+/* ══════════════════════════════════════
+   STARS
+══════════════════════════════════════ */
+(function(){
+  const c=document.getElementById('starCanvas'),ctx=c.getContext('2d');let s=[];
+  function resize(){c.width=innerWidth;c.height=innerHeight;}
+  function make(){s=[];for(let i=0;i<120;i++)s.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.3+0.2,a:Math.random(),sp:Math.random()*0.007+0.002,d:Math.random()>.5?1:-1});}
+  function draw(){ctx.clearRect(0,0,c.width,c.height);s.forEach(p=>{p.a+=p.sp*p.d;if(p.a>=1||p.a<=0)p.d*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(200,210,255,${p.a})`;ctx.fill();});requestAnimationFrame(draw);}
+  window.addEventListener('resize',()=>{resize();make();});resize();make();draw();
+})();
+
+/* ══════════════════════════════════════
+   MODES
+══════════════════════════════════════ */
+const MODES=[
+  {id:'mcq',label:'🎧 MCQ'},
+  {id:'dict',label:'✏️ Dictation'},
+  {id:'essay',label:'📝 Essay'},
+  {id:'grammar',label:'✨ AI Grammar'}
+];
+
+/* ══════════════════════════════════════
+   STATE
+══════════════════════════════════════ */
+let mode='mcq', diff='easy';
+let qIdx=0, sessCorrect=0, sessWrong=0, sessXP=0, sessDoneCount=0;
+let sessionHistory=[];
+let sessionStart=Date.now();
+let listenCount=0, maxListens=3;
+let answered=false, aiUsed=false;
+
+/* ══════════════════════════════════════
+   CORRECT POPUP
+══════════════════════════════════════ */
+const CORRECT_MSGS=['Excellent listening skills!','You nailed it — great work!','Brilliant! Keep it up!','Outstanding answer!','Perfect — you are on fire!'];
+const CORRECT_EMOJIS=['🌟','🎉','🏆','✨','🎯','💫','🔥'];
+
+function showCorrectPopup(xpEarned,onNext){
+  const overlay=document.getElementById('correctOverlay');
+  document.getElementById('cpEmoji').textContent=CORRECT_EMOJIS[Math.floor(Math.random()*CORRECT_EMOJIS.length)];
+  document.getElementById('cpTitle').textContent='Correct!';
+  document.getElementById('cpMsg').textContent=CORRECT_MSGS[Math.floor(Math.random()*CORRECT_MSGS.length)];
+  document.getElementById('cpScore').textContent='+'+xpEarned+' XP earned';
+  overlay.classList.add('show');
+  confetti();
+  overlay._onNext=onNext;
+}
+window.closePopupAndNext=function(){
+  document.getElementById('correctOverlay').classList.remove('show');
+  const fn=document.getElementById('correctOverlay')._onNext;
+  if(fn) fn();
+};
+
+/* ══════════════════════════════════════
+   BUILD UI
+══════════════════════════════════════ */
+function buildModeRow(){
+  const row=document.getElementById('modeRow'); row.innerHTML='';
+  MODES.forEach(m=>{
+    const btn=document.createElement('button');
+    btn.className='mode-chip'+(m.id===mode?' active':'');
+    btn.dataset.mode=m.id; btn.textContent=m.label;
+    btn.onclick=()=>setMode(m.id); row.appendChild(btn);
+  });
+}
+
+function buildDiffRow(){
+  const row=document.getElementById('diffRow'); row.innerHTML='';
+  [['easy','Easy'],['medium','Medium'],['hard','Hard']].forEach(([d,l])=>{
+    const btn=document.createElement('button');
+    btn.className='diff-chip'+(d===diff?' active':'');
+    btn.dataset.d=d; btn.textContent=l;
+    btn.onclick=()=>setDiff(d); row.appendChild(btn);
+  });
+}
+
+function setMode(m){
+  mode=m; qIdx=0; answered=false;
+  document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+  const labels={mcq:'🎧 MCQ',dict:'✏️ Dictation',essay:'📝 Essay',grammar:'✨ AI Grammar'};
+  const sLabels={mcq:'MCQ',dict:'Dictation',essay:'Essay',grammar:'AI Grammar'};
+  document.getElementById('modeBadge').textContent=labels[m];
+  document.getElementById('sessMode').textContent=sLabels[m];
+  document.getElementById('rpMode').textContent=sLabels[m];
+  document.getElementById('resultsScreen').classList.remove('show');
+  resetQ(); renderQ();
+}
+
+function setDiff(d){
+  diff=d; qIdx=0; answered=false;
+  document.querySelectorAll('[data-d]').forEach(b=>b.classList.toggle('active',b.dataset.d===d));
+  const labels={easy:'⭐ Easy',medium:'⭐⭐ Medium',hard:'⭐⭐⭐ Hard'};
+  const sLabels={easy:'Easy',medium:'Medium',hard:'Hard'};
+  document.getElementById('diffBadge').textContent=labels[d];
+  document.getElementById('sessDiff').textContent=sLabels[d];
+  document.getElementById('rpDiff').textContent=sLabels[d];
+  document.getElementById('resultsScreen').classList.remove('show');
+  resetQ(); renderQ();
+}
+
+function resetQ(){listenCount=0;aiUsed=false;answered=false;}
+
+/* ══════════════════════════════════════
+   PROGRESS DOTS — uses TOTAL_Q (10)
+══════════════════════════════════════ */
+function renderDots(marks){
+  const dots=document.getElementById('qDots');
+  dots.innerHTML=Array.from({length:TOTAL_Q},(_,i)=>{
+    let cls='q-dot';
+    if(i<marks.length) cls+=' '+(marks[i]==='correct'?'done':'wrong');
+    else if(i===marks.length) cls+=' active';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+  document.getElementById('qLabel').textContent=
+    `Question ${Math.min(marks.length+1,TOTAL_Q)} of ${TOTAL_Q}`;
+}
+
+/* ══════════════════════════════════════
+   AUDIO
+══════════════════════════════════════ */
+function playAudio(text,onEnd){
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='en-IN'; u.rate=0.85; u.pitch=1;
+  const voices=speechSynthesis.getVoices();
+  const v=voices.find(v=>v.lang==='en-IN')||voices.find(v=>v.name.toLowerCase().includes('india'))||voices.find(v=>v.lang.startsWith('en'))||voices[0];
+  if(v) u.voice=v;
+  if(onEnd) u.onend=onEnd;
+  speechSynthesis.speak(u);
+}
+
+/* ══════════════════════════════════════
+   GET BANK — uses resolved grade (no 'jr_kg' hardcode)
+══════════════════════════════════════ */
+function getBank(){
+  // If data module not loaded at all, return demo
+  const noBanks = typeof MCQ_BANK==='undefined' && typeof DICT_BANK==='undefined' &&
+                  typeof ESSAY_PROMPTS==='undefined' && typeof GRAMMAR_BANK==='undefined';
+  if(noBanks) return {easy:getDemoData(),medium:getDemoData(),hard:getDemoData()};
+
+  if(mode==='mcq')     return (typeof MCQ_BANK!=='undefined'     && MCQ_BANK[grade])     ? MCQ_BANK[grade]     : null;
+  if(mode==='dict')    return (typeof DICT_BANK!=='undefined'    && DICT_BANK[grade])    ? DICT_BANK[grade]    : null;
+  if(mode==='essay')   return (typeof ESSAY_PROMPTS!=='undefined'&& ESSAY_PROMPTS[grade])? ESSAY_PROMPTS[grade]: null;
+  if(mode==='grammar') return (typeof GRAMMAR_BANK!=='undefined' && GRAMMAR_BANK[grade]) ? GRAMMAR_BANK[grade] : null;
+  return null;
+}
+
+function getDemoData(){
+  if(mode==='mcq') return [
+    {audio:'The cat sat on the mat.',q:'What did the cat sit on?',opts:['A chair','A mat','A table','A bed'],ans:1},
+    {audio:'She drinks milk every morning.',q:'When does she drink milk?',opts:['At night','In the evening','Every morning','At lunch'],ans:2},
+    {audio:'The boy runs fast.',q:'How does the boy run?',opts:['Slowly','Fast','Quietly','Carefully'],ans:1},
+    {audio:'Birds fly in the sky.',q:'Where do birds fly?',opts:['In water','Underground','In the sky','In trees'],ans:2},
+    {audio:'He reads a book.',q:'What does he read?',opts:['A newspaper','A book','A letter','A map'],ans:1},
+    {audio:'The sun rises in the east.',q:'Where does the sun rise?',opts:['West','North','East','South'],ans:2},
+    {audio:'Fish live in water.',q:'Where do fish live?',opts:['In trees','In water','In the sky','Underground'],ans:1},
+    {audio:'We eat food every day.',q:'What do we do every day?',opts:['Sleep only','Eat food','Fly high','Run fast'],ans:1},
+    {audio:'The moon shines at night.',q:'When does the moon shine?',opts:['In the morning','At noon','At night','In the evening'],ans:2},
+    {audio:'Dogs are loyal animals.',q:'What are dogs described as?',opts:['Wild','Loyal','Dangerous','Lazy'],ans:1}
+  ];
+  if(mode==='dict') return [
+    'The cat sat on the mat.','She drinks milk every morning.',
+    'The boy runs very fast.','Birds fly in the sky.',
+    'He reads a good book.','The sun rises in the east.',
+    'Fish live in the water.','We eat food every day.',
+    'The moon shines at night.','Dogs are loyal animals.'
+  ];
+  if(mode==='essay') return [
+    'My favourite animal','My school','My family','My best friend',
+    'A rainy day','My favourite food','My home','My morning routine',
+    'Why I like reading','My favourite season'
+  ];
+  if(mode==='grammar') return [
+    'She go to school every day.','The childrens are playing outside.',
+    'He don\'t like vegetables.','They was very happy yesterday.',
+    'I has a red pencil.','The dog runned away fast.',
+    'We is good friends.','She have two brothers.',
+    'He goed to the market.','The boys plays football daily.'
+  ];
+  return [];
+}
+
+/* ══════════════════════════════════════
+   RENDER QUESTION
+══════════════════════════════════════ */
+function renderQ(){
+  const body=document.getElementById('questionBody');
+  document.getElementById('resultsScreen').classList.remove('show');
+
+  const bank=getBank();
+  if(!bank){
+    body.innerHTML=`<div class="q-area" style="color:var(--dim);font-size:0.88rem;">No content available for this selection.</div>`;
+    renderDots([]); return;
+  }
+  const items=bank[diff]||[];
+  if(!items.length){
+    body.innerHTML=`<div class="q-area" style="color:var(--dim);font-size:0.88rem;">No content for this selection.</div>`;
+    renderDots([]); return;
+  }
+
+  const doneMarks=sessionHistory.filter(h=>h.mode===mode&&h.diff===diff).slice(-qIdx).map(h=>h.correct?'correct':'wrong');
+  renderDots(doneMarks);
+
+  if(qIdx>=TOTAL_Q){ showResults(); return; }
+
+  const item=items[qIdx % items.length];
+  listenCount=0; answered=false; aiUsed=false;
+
+  if(mode==='mcq')     renderMCQ(item);
+  else if(mode==='dict')   renderDict(item);
+  else if(mode==='essay')  renderEssay(item);
+  else if(mode==='grammar') renderGrammar(item);
+}
+
+/* ══════════════════════════════════════
+   MCQ
+══════════════════════════════════════ */
+function renderMCQ(item){
+  const body=document.getElementById('questionBody');
+  body.innerHTML=`
+    <div class="q-area">
+      <div class="q-num">Question ${qIdx+1} of ${TOTAL_Q}</div>
+      <div class="listen-row">
+        <button class="listen-btn" id="listenBtn" onclick="handleListen()">
+          <div class="wave"><div class="wave-b"></div><div class="wave-b"></div><div class="wave-b"></div><div class="wave-b"></div><div class="wave-b"></div></div>
+          Click to Listen
+        </button>
+        <span class="listen-count" id="listenCnt">Click to hear the audio</span>
+      </div>
+      <div class="q-text" id="qText">${item.q}</div>
+      <div class="mcq-wrap" id="mcqWrap">
+        ${item.opts.map((o,i)=>`
+        <div class="mcq-opt" data-idx="${i}" onclick="pickMCQ(${i},${item.ans},this)">
+          <div class="opt-letter">${['A','B','C','D'][i]}</div>
+          <div class="opt-text">${o}</div>
+        </div>`).join('')}
+      </div>
+      <div class="fb-box" id="fbBox"><div class="fb-icon" id="fbIcon"></div><div class="fb-text" id="fbText"></div></div>
+    </div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="renderQ()" ${qIdx===0?'disabled':''}>← Back</button>
+      <button class="btn btn-next" id="nextBtn" onclick="nextQ()" disabled>Next →</button>
+    </div>`;
+}
+
+function handleListen(){
+  const btn=document.getElementById('listenBtn');
+  const lbl=document.getElementById('listenCnt');
+  if(listenCount>=maxListens){showToast('Maximum plays reached. Try to answer now!');return;}
+  const bank=getBank(),items=bank[diff]||[],item=items[qIdx%items.length];
+  const audioText=typeof item==='object'?(item.audio||item.q):item;
+  listenCount++;
+  const remaining=maxListens-listenCount;
+  if(lbl) lbl.textContent=remaining>0?`Plays left: ${remaining}`:'No more plays';
+  if(btn){
+    btn.classList.add('playing');
+    if(remaining===0){btn.disabled=true;btn.style.opacity='0.45';}
+    playAudio(audioText,()=>{if(btn)btn.classList.remove('playing');});
+  } else {
+    playAudio(audioText);
+  }
+}
+window.handleListen=handleListen;
+
+function pickMCQ(idx,ans,el){
+  if(answered) return;
+  answered=true;
+  document.querySelectorAll('.mcq-opt').forEach(o=>o.classList.add('disabled'));
+  const correct=(idx===ans);
+  el.classList.add(correct?'correct':'wrong');
+  if(!correct) document.querySelectorAll('.mcq-opt')[ans].classList.add('correct');
+  const fb=document.getElementById('fbBox');
+  fb.className='fb-box show '+(correct?'correct':'wrong');
+  document.getElementById('fbIcon').textContent=correct?'✅':'❌';
+  document.getElementById('fbText').innerHTML=correct
+    ?`<strong>Correct!</strong> Well done — great listening.`
+    :`<strong>Incorrect.</strong> The correct answer was <strong>${document.querySelectorAll('.mcq-opt')[ans].querySelector('.opt-text').textContent}</strong>.`;
+  const xp=recordResult(correct,correct?100:0);
+  if(correct){setTimeout(()=>showCorrectPopup(xp,()=>nextQ()),300);}
+  else{document.getElementById('nextBtn').disabled=false;}
+}
+window.pickMCQ=pickMCQ;
+
+/* ══════════════════════════════════════
+   DICTATION
+══════════════════════════════════════ */
+function renderDict(item){
+  const body=document.getElementById('questionBody');
+  body.innerHTML=`
+    <div class="q-area">
+      <div class="q-num">Question ${qIdx+1} of ${TOTAL_Q} — Type what you hear</div>
+      <div class="listen-row">
+        <button class="listen-btn" id="listenBtn" onclick="handleListen()">
+          <div class="wave"><div class="wave-b"></div><div class="wave-b"></div><div class="wave-b"></div><div class="wave-b"></div><div class="wave-b"></div></div>
+          Listen
+        </button>
+        <span class="listen-count" id="listenCnt">Click to hear the audio</span>
+      </div>
+      <textarea class="q-textarea" id="dictInput" placeholder="Type what you heard here…" rows="3"></textarea>
+      <div class="fb-box" id="fbBox"><div class="fb-icon" id="fbIcon"></div><div class="fb-text" id="fbText"></div></div>
+    </div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="renderQ()" ${qIdx===0?'disabled':''}>← Back</button>
+      <button class="btn btn-check" onclick="checkDict('${escStr(item)}')">Check Answer</button>
+      <button class="btn btn-next" id="nextBtn" onclick="nextQ()" disabled>Next →</button>
+    </div>`;
+}
+
+function checkDict(target){
+  if(answered) return;
+  const input=document.getElementById('dictInput').value.trim();
+  if(!input){showToast('Please type something first!');return;}
+  answered=true;
+  const t=target.toLowerCase().replace(/[^\w\s]/g,'').split(/\s+/);
+  const s=input.toLowerCase().replace(/[^\w\s]/g,'').split(/\s+/);
+  let matches=0; s.forEach(w=>{if(t.includes(w))matches++;});
+  const pct=Math.min(100,Math.round((matches/Math.max(t.length,s.length))*100));
+  const correct=(pct>=70);
+  const fb=document.getElementById('fbBox');
+  fb.className='fb-box show '+(correct?'correct':'wrong');
+  document.getElementById('fbIcon').textContent=pct>=85?'🌟':pct>=70?'✅':'❌';
+  document.getElementById('fbText').innerHTML=`<strong>${pct}% accuracy.</strong> The sentence was: <strong>${target}</strong>`;
+  const xp=recordResult(correct,pct);
+  if(correct){setTimeout(()=>showCorrectPopup(xp,()=>nextQ()),300);}
+  else{document.getElementById('nextBtn').disabled=false;}
+}
+window.checkDict=checkDict;
+
+function escStr(s){return s.replace(/'/g,"\\'");}
+
+/* ══════════════════════════════════════
+   ESSAY
+══════════════════════════════════════ */
+function renderEssay(prompt){
+  const body=document.getElementById('questionBody');
+  body.innerHTML=`
+    <div class="q-area">
+      <div class="q-num">Question ${qIdx+1} of ${TOTAL_Q} — Write your essay</div>
+      <div class="essay-prompt">✏️ <strong>Topic:</strong> ${prompt}</div>
+      <textarea class="q-textarea essay-ta" id="essayInput" placeholder="Write your essay here… (aim for at least 50 words)" rows="6"></textarea>
+      <div class="word-count"><span id="wc">0 words</span><span>Minimum: 30 words</span></div>
+      <div class="ai-result" id="aiResult"></div>
+      <div class="fb-box" id="fbBox"><div class="fb-icon" id="fbIcon"></div><div class="fb-text" id="fbText"></div></div>
+    </div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="renderQ()" ${qIdx===0?'disabled':''}>← Back</button>
+      <button class="btn btn-ai" onclick="checkEssay()">✨ Get AI Feedback</button>
+      <button class="btn btn-next" id="nextBtn" onclick="nextQ()" disabled>Next →</button>
+    </div>`;
+  document.getElementById('essayInput').addEventListener('input',function(){
+    const words=this.value.trim().split(/\s+/).filter(Boolean).length;
+    document.getElementById('wc').textContent=words+' words';
+  });
+}
+
+/* ══════════════════════════════════════
+   GRAMMAR
+══════════════════════════════════════ */
+let _currentGrammarSentence='';
+function renderGrammar(sentence){
+  _currentGrammarSentence=sentence;
+  const body=document.getElementById('questionBody');
+  body.innerHTML=`
+    <div class="q-area">
+      <div class="q-num">Question ${qIdx+1} of ${TOTAL_Q} — Correct the sentence</div>
+      <div class="essay-prompt">🔤 <strong>Incorrect sentence:</strong> ${sentence}</div>
+      <textarea class="q-textarea grammar-ta" id="grammarInput" placeholder="Write the corrected sentence here…" rows="3"></textarea>
+      <div class="ai-result" id="aiResult"></div>
+      <div class="fb-box" id="fbBox"><div class="fb-icon" id="fbIcon"></div><div class="fb-text" id="fbText"></div></div>
+    </div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="renderQ()" ${qIdx===0?'disabled':''}>← Back</button>
+      <button class="btn btn-ai" id="grammarCheckBtn" onclick="checkGrammar()">✨ Check Grammar</button>
+      <button class="btn btn-next" id="nextBtn" onclick="nextQ()" disabled>Next →</button>
+    </div>`;
+}
+
+/* ══════════════════════════════════════
+   GRAMMAR ENGINE (local fallback)
+══════════════════════════════════════ */
+const ERROR_RULES=[
+  {re:/\b(he|she|it)\s+go\b/i,msg:'Subject-verb agreement: use "goes" with he/she/it.'},
+  {re:/\b(they|we|i)\s+is\b/i,msg:'Subject-verb agreement: use "are" with they/we/I.'},
+  {re:/\b(he|she|it)\s+are\b/i,msg:'Subject-verb agreement: use "is" with he/she/it.'},
+  {re:/\b(i|we|they)\s+has\b/i,msg:'Subject-verb agreement: use "have" with I/we/they.'},
+  {re:/\b(he|she|it)\s+have\b/i,msg:'Subject-verb agreement: use "has" with he/she/it.'},
+  {re:/\bgoed\b/i,msg:'"Goed" is not a word — use "went".'},
+  {re:/\bmore\s+(better|faster|bigger)\b/i,msg:'Do not use "more" with comparatives ending in -er.'},
+  {re:/\b(he|she|it)\s+don\'?t\b/i,msg:'Use "doesn\'t" not "don\'t" with he/she/it.'},
+  {re:/\bchilds\b|\bchildrens\b/i,msg:'The plural of "child" is "children".'},
+  {re:/\bwas\b.*\b(they|we|students)\b/i,msg:'Use "were" not "was" with plural subjects.'},
+  {re:/\brunned\b/i,msg:'"Runned" is not a word — use "ran".'},
+];
+
+function evalGrammarLocally(original,student){
+  const originalErrors=ERROR_RULES.filter(r=>r.re.test(original));
+  const errorsStillPresent=ERROR_RULES.filter(r=>r.re.test(student)).map(r=>r.msg);
+  const fixed=originalErrors.filter(r=>!r.re.test(student));
+  let score=65;
+  score-=errorsStillPresent.length*10;
+  score+=fixed.length*8;
+  score=Math.max(10,Math.min(100,score));
+  const label=score>=80?'Excellent':score>=55?'Good':'Needs Improvement';
+  const feedback=score>=80?'Well done! Your correction looks good.':score>=55?'Good attempt! Check your sentence once more.':'The original error was not fully corrected. Try again.';
+  const displayErrors=errorsStillPresent.length?errorsStillPresent:['No grammar errors detected — great job!'];
+  return {score,label,correct_version:'(Compare with your textbook for the corrected version.)',errors_found:displayErrors,feedback,isLocal:true};
+}
+
+function evalEssayLocally(essay,prompt){
+  const words=essay.trim().split(/\s+/).filter(Boolean);
+  const wc=words.length;
+  const sentences=essay.split(/[.!?]+/).filter(s=>s.trim().length>3).length;
+  const hasConnectors=/\b(because|however|therefore|although|moreover|furthermore|firstly|finally|in conclusion|for example)\b/i.test(essay);
+  const uniqueWords=new Set(words.map(w=>w.toLowerCase().replace(/[^\w]/g,''))).size;
+  const vocabularyRatio=uniqueWords/Math.max(wc,1);
+  let score=30;
+  if(wc>=100)score+=25;else if(wc>=70)score+=18;else if(wc>=50)score+=12;else if(wc>=30)score+=6;
+  if(sentences>=5)score+=15;else if(sentences>=3)score+=10;else if(sentences>=2)score+=5;
+  if(/^[A-Z]/.test(essay.trim()))score+=5;
+  if(/[.!?]$/.test(essay.trim()))score+=5;
+  if(hasConnectors)score+=10;
+  if(vocabularyRatio>0.65)score+=10;
+  score=Math.min(98,Math.max(20,score));
+  const label=score>=80?'Excellent':score>=60?'Good':'Needs Improvement';
+  const strength=wc>=80&&hasConnectors?'You wrote a well-developed essay with good connecting words.':wc>=60?'Good detail and expression.':'Good start — keep practising.';
+  const improve=!hasConnectors?'Use connecting words like "because", "however", "therefore".':wc<60?'Write more — aim for 80+ words with intro, body, conclusion.':'Try adding specific examples to your points.';
+  const corrected=`A model essay on "${prompt}" should have: (1) introduction, (2) 2–3 body paragraphs with examples, (3) a conclusion.`;
+  return {score,label,strength,improvement:improve,corrected};
+}
+
+/* ══════════════════════════════════════
+   GROQ AI
+══════════════════════════════════════ */
+const GROQ_KEY='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';
+const GROQ_URL='https://api.groq.com/openai/v1/chat/completions';
+
+async function callGroq(prompt,retries=2){
+  for(let attempt=1;attempt<=retries;attempt++){
+    try{
+      const resp=await fetch(GROQ_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_KEY},body:JSON.stringify({model:'llama-3.1-8b-instant',messages:[{role:'system',content:'You are an expert English grammar teacher. Always respond ONLY with valid JSON. No markdown, no extra text.'},{role:'user',content:prompt}],temperature:0.2,max_tokens:700})});
+      if(resp.status===429){await new Promise(r=>setTimeout(r,attempt*3000));continue;}
+      if(!resp.ok) throw new Error('Groq error: '+resp.status);
+      const data=await resp.json();
+      return (data.choices?.[0]?.message?.content||'').replace(/```json|```/g,'').trim();
+    }catch(e){if(attempt===retries)throw e;await new Promise(r=>setTimeout(r,attempt*2000));}
+  }
+  throw new Error('Groq failed');
+}
+
+async function checkGrammar(original){
+  if(aiUsed){showToast('Feedback already given for this question.');return;}
+  const _orig=original||_currentGrammarSentence;
+  const student=document.getElementById('grammarInput').value.trim();
+  if(!student){showToast('Please write your corrected sentence first!');return;}
+  aiUsed=true; answered=true;
+  showAILoading();
+  try{
+    const schema='{"score":<0-100>,"label":"Excellent|Good|Needs Improvement","correct_version":"...","what_student_fixed":["..."],"remaining_errors":["..."],"feedback":"..."}';
+    const promptText='You are a strict English grammar teacher. A student was given an INCORRECT sentence to correct.\n\nINCORRECT SENTENCE: "'+_orig+'"\nSTUDENT WROTE: "'+student+'"\n\nYour job: (1) Write the PERFECT correction. (2) Compare word by word. (3) List what they fixed. (4) List remaining errors. (5) Give score.\n\nScoring: 95-100=perfect, 80-94=one minor issue, 60-79=partially corrected, 40-59=major errors, 10-39=largely incorrect.\n\nRespond ONLY with valid JSON: '+schema;
+    const raw=await callGroq(promptText);
+    const json=JSON.parse(raw);
+    displayGrammarResultGroq(json);
+    const xp=recordResult(json.score>=60,json.score);
+    document.getElementById('nextBtn').disabled=false;
+    if(json.score>=60) setTimeout(()=>showCorrectPopup(xp,()=>nextQ()),400);
+  }catch(e){
+    const result=evalGrammarLocally(_orig||_currentGrammarSentence||'',student||'');
+    displayGrammarResult(result);
+    showToast('⚠️ Using offline evaluation.');
+    const xp=recordResult(result.score>=60,result.score);
+    document.getElementById('nextBtn').disabled=false;
+    if(result.score>=60) setTimeout(()=>showCorrectPopup(xp,()=>nextQ()),400);
+  }
+}
+window.checkGrammar=checkGrammar;
+
+async function checkEssay(){
+  if(aiUsed){showToast('Feedback already given for this question.');return;}
+  const txt=document.getElementById('essayInput').value.trim();
+  if(!txt||txt.split(/\s+/).filter(Boolean).length<10){showToast('Please write at least 10 words first!');return;}
+  aiUsed=true;
+  const bank=getBank(),items=bank[diff]||[],prompt=items[qIdx%items.length];
+  showAILoading();
+  try{
+    const schema='{"score":<0-100>,"label":"Excellent|Good|Needs Improvement","strength":"...","improvement":"...","grammar_errors":["..."],"corrected":"...","feedback":"..."}';
+    const promptText='You are a detailed English teacher marking an Indian school student essay.\n\nEssay topic: "'+prompt+'"\nStudent essay: "'+txt+'"\n\nGrade on: (1)Relevance (2)Grammar (3)Vocabulary (4)Sentence structure (5)Organisation. Total out of 100.\n\nRespond ONLY with valid JSON: '+schema;
+    const raw=await callGroq(promptText);
+    const json=JSON.parse(raw);
+    displayEssayResultGroq(json);
+    const xp=recordResult(json.score>=60,json.score);
+    document.getElementById('nextBtn').disabled=false;
+    if(json.score>=60) setTimeout(()=>showCorrectPopup(xp,()=>nextQ()),400);
+  }catch(e){
+    const result=evalEssayLocally(txt||'',prompt||'');
+    displayEssayResult(result);
+    const xp=recordResult(result.score>=60,result.score);
+    document.getElementById('nextBtn').disabled=false;
+    if(result.score>=60) setTimeout(()=>showCorrectPopup(xp,()=>nextQ()),400);
+  }
+}
+window.checkEssay=checkEssay;
+
+/* ══════════════════════════════════════
+   AI DISPLAY HELPERS
+══════════════════════════════════════ */
+function showAILoading(){
+  const r=document.getElementById('aiResult');
+  r.className='ai-result show';
+  r.innerHTML=`<div class="ai-loading"><div class="ai-spinner"></div>AI is evaluating your response…</div>`;
+}
+
+function displayGrammarResultGroq(json){
+  const r=document.getElementById('aiResult');
+  const cls=json.score>=80?'great':json.score>=55?'good':'retry';
+  r.className='ai-result show';
+  const remainHtml=(json.remaining_errors||[]).length===0||(json.remaining_errors||[]).every(e=>!e||!e.trim())?
+    '<div style="padding:8px 12px;background:rgba(45,220,130,0.07);border:1px solid rgba(45,220,130,0.2);border-radius:8px;font-size:0.8rem;color:var(--green);">🎉 No remaining errors!</div>':
+    (json.remaining_errors||[]).filter(Boolean).map(e=>`<div style="display:flex;gap:8px;padding:8px 12px;background:rgba(255,107,157,0.05);border:1px solid rgba(255,107,157,0.18);border-radius:8px;margin-bottom:5px;font-size:0.8rem;color:var(--muted);">⚠️ ${e}</div>`).join('');
+  const fixedHtml=(json.what_student_fixed||[]).filter(Boolean).map(f=>`<div style="display:flex;gap:8px;padding:7px 12px;background:rgba(45,220,130,0.06);border:1px solid rgba(45,220,130,0.18);border-radius:8px;margin-bottom:5px;font-size:0.8rem;color:var(--green);">✅ ${f}</div>`).join('');
+  r.innerHTML=`<div class="ai-inner">
+    <div class="ai-score-row"><div class="ai-score-num ${cls}">${json.score}/100</div><div class="ai-score-lbl ${cls}">${json.label}</div><div style="font-size:0.65rem;color:var(--dim);margin-left:auto;padding:3px 8px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--border);">⚡ Groq AI</div></div>
+    <div class="ai-section"><div class="ai-sec-title">✅ Perfect Correction</div><div class="ai-corrected">${json.correct_version}</div></div>
+    ${fixedHtml?`<div class="ai-section"><div class="ai-sec-title">👍 What You Fixed</div>${fixedHtml}</div>`:''}
+    <div class="ai-section"><div class="ai-sec-title">⚠️ Still Needs Fixing</div>${remainHtml}</div>
+    <div class="ai-section"><div class="ai-sec-title">💬 Teacher's Feedback</div><div class="ai-text">${json.feedback}</div></div>
+  </div>`;
+}
+
+function displayEssayResultGroq(json){
+  const r=document.getElementById('aiResult');
+  const cls=json.score>=80?'great':json.score>=55?'good':'retry';
+  r.className='ai-result show';
+  const grammarHtml=(json.grammar_errors||[]).length?`<div class="ai-section"><div class="ai-sec-title">📝 Grammar Points</div>${(json.grammar_errors).map(e=>`<div class="ai-issue">⚠️ ${e}</div>`).join('')}</div>`:'';
+  r.innerHTML=`<div class="ai-inner">
+    <div class="ai-score-row"><div class="ai-score-num ${cls}">${json.score}/100</div><div class="ai-score-lbl ${cls}">${json.label}</div><div style="font-size:0.65rem;color:var(--dim);margin-left:auto;padding:3px 8px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--border);">⚡ Groq AI</div></div>
+    <div class="ai-section"><div class="ai-sec-title">💪 What You Did Well</div><div class="ai-text">${json.strength}</div></div>
+    <div class="ai-section"><div class="ai-sec-title">📈 How to Improve</div><div class="ai-text">${json.improvement}</div></div>
+    ${grammarHtml}
+    <div class="ai-section"><div class="ai-sec-title">✅ Model Version</div><div class="ai-corrected">${json.corrected}</div></div>
+    <div class="ai-section"><div class="ai-sec-title">💬 Teacher Feedback</div><div class="ai-text">${json.feedback}</div></div>
+  </div>`;
+}
+
+function displayEssayResult(json){
+  const r=document.getElementById('aiResult');
+  const cls=json.score>=80?'great':json.score>=55?'good':'retry';
+  r.className='ai-result show';
+  r.innerHTML=`<div class="ai-inner">
+    <div class="ai-score-row"><div class="ai-score-num ${cls}">${json.score}/100</div><div class="ai-score-lbl ${cls}">${json.label}</div></div>
+    <div class="ai-section"><div class="ai-sec-title">💪 Strength</div><div class="ai-text">${json.strength}</div></div>
+    <div class="ai-section"><div class="ai-sec-title">📈 To Improve</div><div class="ai-text">${json.improvement}</div></div>
+    <div class="ai-section"><div class="ai-sec-title">✅ Suggested Version</div><div class="ai-corrected">${json.corrected}</div></div>
+  </div>`;
+}
+
+function displayGrammarResult(json){
+  const r=document.getElementById('aiResult');
+  const cls=json.score>=80?'great':json.score>=55?'good':'retry';
+  r.className='ai-result show';
+  const issues=(json.errors_found||[]).map(e=>`<div class="ai-issue">⚠️ ${e}</div>`).join('');
+  r.innerHTML=`<div class="ai-inner">
+    <div class="ai-score-row"><div class="ai-score-num ${cls}">${json.score}/100</div><div class="ai-score-lbl ${cls}">${json.label}</div></div>
+    <div class="ai-section"><div class="ai-sec-title">✅ Correct Version</div><div class="ai-corrected">${json.correct_version}</div></div>
+    ${issues?`<div class="ai-section"><div class="ai-sec-title">⚠️ Grammar Points</div>${issues}</div>`:''}
+    <div class="ai-section"><div class="ai-sec-title">💬 Teacher Feedback</div><div class="ai-text">${json.feedback}</div></div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════
+   RECORD RESULT + NEXT
+══════════════════════════════════════ */
+function recordResult(correct,score,studentAnswer){
+  const finalScore=(score!==undefined&&score!==null&&!isNaN(score))?score:(correct?100:0);
+  const xpVal=finalScore>=80?20:finalScore>=60?12:8;
+  const bank=getBank(),items=bank[diff]||[],item=items[qIdx%items.length];
+  const questionText=typeof item==='object'?(item.q||item.audio||String(item)):String(item);
+  if(correct){
+    sessCorrect++;sessXP+=xpVal;sessDoneCount++;
+    document.getElementById('sCorrect').textContent=sessCorrect;
+    document.getElementById('sXP').textContent='+'+sessXP;
+    document.getElementById('topXP').textContent=(2450+sessXP).toLocaleString()+' XP';
+  } else {
+    sessWrong++;sessDoneCount++;
+    document.getElementById('sWrong').textContent=sessWrong;
+  }
+  const total2=sessCorrect+sessWrong;
+  const acc2=total2>0?Math.round((sessCorrect/total2)*100):0;
+  document.getElementById('sAcc').textContent=acc2+'%';
+  document.getElementById('rpAcc').textContent=acc2+'%';
+  document.getElementById('sessDone').textContent=sessDoneCount;
+  updateReportPreview();
+  sessionHistory.push({mode,diff,qIdx,question:questionText,correct:!!correct,score:finalScore,answer:studentAnswer||(correct?'Correct':'Wrong')});
+  return xpVal;
+}
+
+function nextQ(){
+  qIdx++;
+  if(qIdx>=TOTAL_Q){showResults();return;}
+  resetQ();renderQ();
+}
+window.nextQ=nextQ;
+
+/* ══════════════════════════════════════
+   RESULTS — uses TOTAL_Q (10)
+══════════════════════════════════════ */
+function showResults(){
+  document.getElementById('questionBody').innerHTML='';
+  document.getElementById('qDots').innerHTML=
+    Array.from({length:TOTAL_Q},()=>'<div class="q-dot done"></div>').join('');
+  document.getElementById('qLabel').textContent='Level complete! ✅';
+  const rs=document.getElementById('resultsScreen');
+  rs.classList.add('show');
+  const acc=sessCorrect+sessWrong>0?Math.round((sessCorrect/(sessCorrect+sessWrong))*100):0;
+  const cls=acc>=80?'great':acc>=55?'good':'retry';
+  document.getElementById('resTrophy').textContent=acc>=80?'🏆':acc>=55?'🎉':'💪';
+  document.getElementById('resScore').textContent=acc+'%';
+  document.getElementById('resScore').className='res-score '+cls;
+  const levels=['easy','medium','hard'];
+  const levelLabels={easy:'Easy',medium:'Medium',hard:'Hard'};
+  const curIdx=levels.indexOf(diff);
+  const hasNext=curIdx<2;
+  const nextLvl=hasNext?levels[curIdx+1]:null;
+  document.getElementById('resLabel').innerHTML=acc>=80?(hasNext?`Excellent! Ready for <strong>${levelLabels[nextLvl]}</strong> level?`:'You completed all levels! 🌟'):acc>=55?'Good job — keep practising!':'Keep trying — you will improve!';
+  document.getElementById('resCorrect').textContent=sessCorrect+' / '+TOTAL_Q;
+  document.getElementById('resAcc').textContent=acc+'%';
+  document.getElementById('resXP').textContent='+'+sessXP+' XP';
+  const nextBtn=document.getElementById('resNextBtn');
+  if(nextBtn){if(hasNext){nextBtn.textContent=`Move to ${levelLabels[nextLvl]} →`;nextBtn.disabled=false;}else{nextBtn.textContent='🌟 Master Level!';nextBtn.disabled=true;}}
+  confetti();
+  showToast('🎉 Level complete! +'+sessXP+' XP earned!');
+}
+
+function retryQuiz(){
+  qIdx=0;sessCorrect=0;sessWrong=0;sessXP=0;sessDoneCount=0;sessionHistory=[];
+  document.getElementById('sCorrect').textContent=0;
+  document.getElementById('sWrong').textContent=0;
+  document.getElementById('sXP').textContent='+0';
+  document.getElementById('sAcc').textContent='—';
+  document.getElementById('sessDone').textContent=0;
+  document.getElementById('rpAcc').textContent='—';
+  document.getElementById('resultsScreen').classList.remove('show');
+  resetQ();renderQ();
+}
+window.retryQuiz=retryQuiz;
+
+function nextLevel(){
+  const levels=['easy','medium','hard'];
+  const idx=levels.indexOf(diff);
+  if(idx<2){setDiff(levels[idx+1]);}
+  else{showToast('🌟 You have completed all levels!');}
+}
+window.nextLevel=nextLevel;
+
+/* ══════════════════════════════════════
+   REPORT PREVIEW
+══════════════════════════════════════ */
+function updateReportPreview(){
+  document.getElementById('rpName').textContent=document.getElementById('stuName').value||'—';
+}
+document.getElementById('stuName').addEventListener('input',updateReportPreview);
+
+/* ══════════════════════════════════════
+   TOAST / CONFETTI / TIMER
+══════════════════════════════════════ */
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+function confetti(){
+  const cols=['#ff6b9d','#9b6dff','#f5c842','#43e8d8','#2ddc82','#4f8ef7'];
+  for(let i=0;i<55;i++){
+    const el=document.createElement('div');el.className='cp';
+    el.style.left=Math.random()*100+'vw';
+    el.style.background=cols[Math.floor(Math.random()*cols.length)];
+    el.style.width=(5+Math.random()*7)+'px';el.style.height=(5+Math.random()*7)+'px';
+    el.style.borderRadius=Math.random()>.5?'50%':'2px';
+    el.style.animationDuration=(1.4+Math.random()*1.8)+'s';el.style.animationDelay=(Math.random()*.7)+'s';
+    document.body.appendChild(el);setTimeout(()=>el.remove(),4000);
+  }
+}
+
+function updateTimer(){
+  const e=Math.floor((Date.now()-sessionStart)/1000);
+  document.getElementById('sessTime').textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');
+}
+
+/* ══════════════════════════════════════
+   PDF REPORT — fills 10 rows
+══════════════════════════════════════ */
+function downloadPDF(){
+  const {jsPDF}=window.jspdf;
+  if(!jsPDF){showToast('PDF library loading, try again.');return;}
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210,M=18;
+  const date=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const name=document.getElementById('stuName').value||'—';
+  const roll=document.getElementById('stuRoll').value||'—';
+  const modeLabel={mcq:'MCQ',dict:'Dictation',essay:'Essay',grammar:'AI Grammar'}[mode];
+  const diffLabel={easy:'Easy',medium:'Medium',hard:'Hard'}[diff];
+  const elapsed=Math.floor((Date.now()-sessionStart)/1000);
+  const dur=Math.floor(elapsed/60)+'m '+String(elapsed%60).padStart(2,'0')+'s';
+  const total=sessCorrect+sessWrong;
+  const acc=total>0?Math.round((sessCorrect/total)*100):0;
+
+  let y=0;
+  const txt=(s,x,yy,o)=>doc.text(s,x,yy,o||{});
+  const rect=(x,yy,w,h,r,fill)=>{doc.setFillColor(...fill);r>0?doc.roundedRect(x,yy,w,h,r,r,'F'):doc.rect(x,yy,w,h,'F');};
+  const ln=(x1,y1,x2,y2,r,g,b,lw)=>{doc.setDrawColor(r,g,b);doc.setLineWidth(lw||0.3);doc.line(x1,y1,x2,y2);};
+
+  /* HEADER */
+  rect(0,0,W,26,0,[240,245,255]);
+  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(255,107,157);
+  txt('TalkyLab',M,12);
+  doc.setFontSize(8);doc.setTextColor(100,110,160);txt('Listen & Write — Session Report',M+35,12);
+  doc.setFontSize(8);doc.setTextColor(120,130,180);txt(date,W-M,12,{align:'right'});
+  doc.setFontSize(7);doc.setTextColor(140,150,190);
+  txt('Module 02 · Indian English · '+gradeLabel+' · '+modeLabel+' · '+diffLabel,M,20);
+  y=32;
+
+  /* STUDENT INFO */
+  rect(M,y,W-2*M,22,3,[245,248,255]);
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(255,107,157);txt('Student Information',M+5,y+7);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(100,110,160);
+  txt('Name: ',M+5,y+14);doc.setFont('helvetica','bold');doc.setTextColor(40,50,100);txt(name,M+20,y+14);
+  doc.setFont('helvetica','normal');doc.setTextColor(100,110,160);txt('Roll No: ',M+75,y+14);
+  doc.setFont('helvetica','bold');doc.setTextColor(40,50,100);txt(roll,M+95,y+14);
+  doc.setFont('helvetica','normal');doc.setTextColor(100,110,160);txt('Date: ',W-M-60,y+14);
+  doc.setFont('helvetica','bold');doc.setTextColor(40,50,100);txt(date,W-M-46,y+14);
+  y+=28;
+
+  /* SCORE CARDS */
+  const cardW=(W-2*M-9)/4;
+  [{label:'Score',val:acc+'%',col:[255,107,157]},{label:'Correct',val:String(sessCorrect),col:[45,220,130]},
+   {label:'Wrong',val:String(sessWrong),col:[155,109,255]},{label:'XP Earned',val:'+'+sessXP,col:[245,200,66]}
+  ].forEach((s,i)=>{
+    const bx=M+i*(cardW+3);
+    rect(bx,y,cardW,20,3,[245,248,255]);
+    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(s.col[0],s.col[1],s.col[2]);
+    txt(s.val,bx+cardW/2,y+11,{align:'center'});
+    doc.setFont('helvetica','bold');doc.setFontSize(5.5);doc.setTextColor(100,110,160);
+    txt(s.label.toUpperCase(),bx+cardW/2,y+17,{align:'center'});
+  });
+  y+=26;
+
+  /* REMARK */
+  const remark=acc>=80?'Excellent! Outstanding performance.':acc>=60?'Good effort. Keep practising.':total>0?'Needs more practice.':'No attempts recorded.';
+  const remarkCol=acc>=80?[45,220,130]:acc>=60?[245,200,66]:[255,107,157];
+  rect(M,y,W-2*M,12,3,[245,248,255]);
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(remarkCol[0],remarkCol[1],remarkCol[2]);
+  txt('Overall Remark: '+remark,M+5,y+8);
+  y+=18;
+
+  /* QUESTION HISTORY TABLE */
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(255,107,157);
+  txt('QUESTION HISTORY',M,y);
+  ln(M+doc.getTextWidth('QUESTION HISTORY')+3,y-0.5,W-M,y-0.5,255,107,157,0.5);
+  y+=5;
+  rect(M,y,W-2*M,8,0,[230,235,255]);
+  doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor(100,110,160);
+  txt('#',M+3,y+5.5);txt('Question / Item',M+10,y+5.5);txt('Score %',W-M-5,y+5.5,{align:'right'});
+  y+=8;
+
+  const rowH=14;
+  if(!sessionHistory.length){
+    rect(M,y,W-2*M,rowH,0,[248,250,255]);
+    doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(140,150,190);
+    txt('No questions attempted yet.',M+5,y+7);y+=14;
+  } else {
+    sessionHistory.forEach((item,i)=>{
+      if(y>268){doc.addPage();y=18;}
+      rect(M,y,W-2*M,rowH,0,i%2===0?[250,252,255]:[245,248,255]);
+      const sc=typeof item.score==='number'?item.score:(item.correct?100:0);
+      const col=item.correct?[45,220,130]:[255,107,157];
+      doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(100,110,160);
+      txt(String(i+1),M+3,y+6);
+      doc.setFont('helvetica','bold');doc.setFontSize(6.8);doc.setTextColor(40,50,100);
+      const q=String(item.question||'—');
+      txt(q.length>62?q.slice(0,59)+'…':q,M+10,y+6);
+      doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor(100,110,160);
+      txt(item.correct?'Answered correctly':'Answered incorrectly',M+10,y+11);
+      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(col[0],col[1],col[2]);
+      txt(sc+'%',W-M-4,y+6.5,{align:'right'});
+      const barW=28,barX=W-M-4-barW;
+      doc.setFillColor(210,220,245);doc.roundedRect(barX,y+8.5,barW,3.5,1.5,1.5,'F');
+      if(sc>0){doc.setFillColor(col[0],col[1],col[2]);doc.roundedRect(barX,y+8.5,barW*sc/100,3.5,1.5,1.5,'F');}
+      y+=rowH;
+    });
+    // Fill remaining rows up to TOTAL_Q (10)
+    for(let i=sessionHistory.length;i<TOTAL_Q;i++){
+      if(y>268){doc.addPage();y=18;}
+      rect(M,y,W-2*M,rowH,0,i%2===0?[250,252,255]:[245,248,255]);
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(140,150,190);
+      txt(String(i+1),M+3,y+6);
+      doc.setFont('helvetica','italic');txt('Not attempted',M+10,y+6);
+      y+=rowH;
+    }
+  }
+  y+=6;
+
+  /* SESSION DETAILS */
+  if(y>255){doc.addPage();y=18;}
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(255,107,157);
+  txt('SESSION DETAILS',M,y);
+  ln(M+doc.getTextWidth('SESSION DETAILS')+3,y-0.5,W-M,y-0.5,255,107,157,0.5);
+  y+=6;
+  const halfW=(W-2*M-4)/2;
+  [['Grade',gradeLabel],['Mode',modeLabel],['Difficulty',diffLabel],
+   ['Session Duration',dur],['Total Attempted',String(total)+' / '+TOTAL_Q],
+   ['Accuracy',acc+'%'],['XP Earned','+'+sessXP+' XP']
+  ].forEach((d,i)=>{
+    const cx=i%2===0?M:M+halfW+4;
+    if(i%2===0){rect(cx,y,halfW,9,0,[250,252,255]);rect(cx+halfW+4,y,halfW,9,0,[245,248,255]);}
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(100,110,160);txt(d[0],cx+3,y+6.5);
+    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(40,50,100);txt(d[1],cx+halfW-3,y+6.5,{align:'right'});
+    if(i%2===1)y+=10;
+  });
+  y+=16;
+
+  /* TIPS */
+  if(y>255){doc.addPage();y=18;}
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(255,107,157);
+  txt('REMARKS & TIPS',M,y);
+  ln(M+doc.getTextWidth('REMARKS & TIPS')+3,y-0.5,W-M,y-0.5,255,107,157,0.5);
+  y+=6;
+  ['Always click Listen before attempting the question — listening carefully is the key skill.',
+   'Aim for 80% or above accuracy before moving to a harder difficulty level.',
+   'For dictation, focus on spelling each word exactly as you hear it.',
+   'For essays, use connecting words like "because", "however", and "therefore".',
+   'Complete all '+TOTAL_Q+' questions every session to maximise learning and XP earned.'
+  ].forEach((tip,i)=>{
+    rect(M,y,W-2*M,9,0,i%2===0?[250,252,255]:[245,248,255]);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(60,70,120);
+    txt('• '+tip,M+4,y+6.5,{maxWidth:W-2*M-8});y+=9;
+  });
+  y+=4;
+
+  /* SIGNATURES */
+  if(y<258){
+    doc.setDrawColor(180,185,220);doc.setLineWidth(0.4);
+    doc.line(M,y+14,M+50,y+14);doc.line(W-M-50,y+14,W-M,y+14);
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(140,145,185);
+    txt("Teacher's Signature",M,y+18);txt("Student's Signature",W-M,y+18,{align:'right'});
+  }
+
+  /* FOOTER ALL PAGES */
+  const pages=doc.getNumberOfPages();
+  for(let p=1;p<=pages;p++){
+    doc.setPage(p);
+    rect(0,284,W,13,0,[240,245,255]);
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(100,110,160);
+    txt('TalkyLab Language Lab — AI-Powered Educational Platform — Module 02: Listen & Write',M,291);
+    txt('Page '+p+' of '+pages+'   Generated: '+new Date().toLocaleString(),W-M,291,{align:'right'});
+  }
+
+  doc.save('TalkyLab-M02-'+(name.replace(/\s+/g,'-')||'Student')+'-'+gradeLabel+'-'+modeLabel+'-'+new Date().toISOString().slice(0,10)+'.pdf');
+  showToast('✅ PDF report downloaded!');
+}
+window.downloadPDF=downloadPDF;
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+function init(){
+  // Stamp grade everywhere — no grade selector to build
+  document.getElementById('gradeBadge').textContent = gradeLabel;
+  document.getElementById('sessGrade').textContent  = gradeLabel;
+  document.getElementById('rpGrade').textContent    = gradeLabel;
+
+  buildModeRow();
+  buildDiffRow();
+  setInterval(updateTimer,1000);
+  speechSynthesis.onvoiceschanged=()=>{};
+  renderQ();
+}
+
+document.addEventListener('DOMContentLoaded',init);
+window.addEventListener('beforeunload',()=>speechSynthesis.cancel());
+document.addEventListener('visibilitychange',()=>{if(document.hidden)speechSynthesis.cancel();});
+</script>
+</body>
+</html>

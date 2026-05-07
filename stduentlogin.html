@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Login Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:     #0f1f3d;
+      --navy-mid: #162845;
+      --teal:     #1a8c8c;
+      --teal-lt:  #22b8b8;
+      --amber:    #f5a623;
+      --amber-lt: #ffc156;
+      --white:    #f9f8f4;
+      --muted:    #9aaccc;
+      --card-bg:  #162340;
+      --border:   rgba(255,255,255,0.07);
+      --err:      #ff6b6b;
+    }
+
+    body {
+      min-height: 100vh;
+      background-color: var(--navy);
+      font-family: 'DM Sans', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* === BACKGROUND GEOMETRY === */
+    .bg-layer {
+      position: fixed; inset: 0; z-index: 0; overflow: hidden;
+    }
+    .bg-circle {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.18;
+    }
+    .bg-circle.c1 {
+      width: 600px; height: 600px;
+      background: var(--teal);
+      top: -160px; left: -140px;
+      animation: drift 14s ease-in-out infinite alternate;
+    }
+    .bg-circle.c2 {
+      width: 480px; height: 480px;
+      background: var(--amber);
+      bottom: -120px; right: -100px;
+      animation: drift 18s ease-in-out infinite alternate-reverse;
+    }
+    .bg-circle.c3 {
+      width: 300px; height: 300px;
+      background: #4466ee;
+      top: 50%; left: 55%;
+      opacity: 0.12;
+      animation: drift 22s ease-in-out infinite alternate;
+    }
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(40px, 30px) scale(1.07); }
+    }
+
+    /* Grid lines */
+    .grid-lines {
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* === LAYOUT === */
+    .wrapper {
+      position: relative; z-index: 10;
+      display: flex;
+      width: min(900px, 95vw);
+      min-height: 540px;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.55), 0 0 0 1px var(--border);
+      animation: slideUp 0.7s cubic-bezier(0.16,1,0.3,1) forwards;
+      opacity: 0; transform: translateY(40px);
+    }
+    @keyframes slideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* === LEFT PANEL === */
+    .panel-left {
+      flex: 1.1;
+      background: linear-gradient(145deg, #0d2244 0%, #0b3a3a 100%);
+      padding: 52px 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+    .panel-left::before {
+      content: '';
+      position: absolute;
+      width: 280px; height: 280px;
+      border-radius: 50%;
+      border: 1px solid rgba(34,184,184,0.18);
+      top: -60px; right: -80px;
+    }
+    .panel-left::after {
+      content: '';
+      position: absolute;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      border: 1px solid rgba(245,166,35,0.15);
+      bottom: 60px; left: -40px;
+    }
+
+    .school-badge {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .badge-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--teal), var(--teal-lt));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .badge-icon svg { width: 24px; height: 24px; fill: #fff; }
+    .school-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      color: var(--white);
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .school-name span { color: var(--teal-lt); font-size: 0.75rem; font-family: 'DM Sans'; font-weight: 400; display: block; margin-top: 2px; }
+
+    .panel-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 20px 0; }
+    .panel-hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 2.9rem);
+      color: var(--white);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 18px;
+    }
+    .panel-hero h1 em {
+      font-style: normal;
+      color: var(--amber);
+      display: block;
+    }
+    .panel-hero p {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.7;
+      max-width: 300px;
+    }
+
+    .notice-box {
+      background: rgba(245,166,35,0.1);
+      border: 1px solid rgba(245,166,35,0.3);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .notice-icon { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; }
+    .notice-icon svg { fill: var(--amber); width: 18px; height: 18px; }
+    .notice-text { font-size: 0.8rem; color: #e8c97a; line-height: 1.55; }
+    .notice-text strong { display: block; color: var(--amber-lt); margin-bottom: 2px; }
+
+    /* === RIGHT PANEL (FORM) === */
+    .panel-right {
+      flex: 1;
+      background: var(--card-bg);
+      padding: 52px 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .form-header { margin-bottom: 36px; }
+    .form-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.75rem;
+      color: var(--white);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .form-header p { color: var(--muted); font-size: 0.85rem; }
+
+    .form-group { margin-bottom: 22px; position: relative; }
+    .form-label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      width: 18px; height: 18px;
+      color: var(--muted);
+      transition: color 0.25s;
+      pointer-events: none;
+    }
+    .input-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .form-input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 14px 13px 44px;
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+    }
+    .form-input::placeholder { color: rgba(154,172,204,0.45); }
+    .form-input:focus {
+      border-color: var(--teal);
+      background: rgba(26,140,140,0.08);
+      box-shadow: 0 0 0 4px rgba(26,140,140,0.12);
+    }
+    .form-input:focus + .input-icon,
+    .input-wrap:focus-within .input-icon { color: var(--teal-lt); }
+
+    /* Toggle password button */
+    .toggle-pw {
+      position: absolute;
+      right: 12px;
+      background: none; border: none; cursor: pointer;
+      color: var(--muted);
+      padding: 4px;
+      transition: color 0.2s;
+    }
+    .toggle-pw:hover { color: var(--teal-lt); }
+    .toggle-pw svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Error message */
+    .field-error {
+      font-size: 0.75rem;
+      color: var(--err);
+      margin-top: 6px;
+      display: none;
+    }
+    .form-group.has-error .form-input { border-color: var(--err); box-shadow: 0 0 0 4px rgba(255,107,107,0.1); }
+    .form-group.has-error .field-error { display: block; }
+
+    /* Remember row */
+    .extras-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 26px;
+    }
+    .checkbox-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.82rem; color: var(--muted);
+      cursor: pointer; user-select: none;
+    }
+    .checkbox-label input[type="checkbox"] { display: none; }
+    .custom-check {
+      width: 17px; height: 17px;
+      border: 1.5px solid rgba(255,255,255,0.18);
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .checkbox-label input:checked ~ .custom-check {
+      background: var(--teal);
+      border-color: var(--teal);
+    }
+    .custom-check svg { width: 10px; height: 10px; stroke: #fff; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; display: none; }
+    .checkbox-label input:checked ~ .custom-check svg { display: block; }
+
+    .help-link {
+      font-size: 0.78rem; color: var(--teal-lt);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .help-link:hover { color: var(--amber); text-decoration: underline; }
+
+    /* Submit Button */
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--teal) 0%, var(--teal-lt) 100%);
+      border: none; border-radius: 10px;
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.97rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.25s;
+      box-shadow: 0 6px 24px rgba(26,140,140,0.35);
+    }
+    .btn-login:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+      box-shadow: 0 10px 32px rgba(26,140,140,0.45);
+    }
+    .btn-login:active { transform: translateY(0px); }
+    .btn-login .btn-text { position: relative; z-index: 1; }
+    .btn-login::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .btn-login:hover::before { opacity: 1; }
+
+    /* Loading state */
+    .btn-login.loading .btn-text { opacity: 0; }
+    .btn-login .spinner {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px; height: 20px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .btn-login.loading .spinner { display: block; }
+    @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+    /* Success overlay */
+    .success-overlay {
+      position: absolute; inset: 0;
+      background: var(--card-bg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.4s;
+      z-index: 20;
+      border-radius: 0;
+    }
+    .success-overlay.show { opacity: 1; pointer-events: auto; }
+    .success-circle {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, var(--teal), var(--teal-lt));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(26,140,140,0.4);
+      animation: popIn 0.5s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .success-circle svg { width: 32px; height: 32px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .success-overlay h3 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--white); margin-bottom: 6px; }
+    .success-overlay p { color: var(--muted); font-size: 0.85rem; }
+
+    .footer-note {
+      margin-top: 26px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: rgba(154,172,204,0.45);
+      line-height: 1.6;
+    }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 660px) {
+      .panel-left { display: none; }
+      .panel-right { padding: 40px 28px; }
+      .wrapper { border-radius: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background -->
+  <div class="bg-layer">
+    <div class="bg-circle c1"></div>
+    <div class="bg-circle c2"></div>
+    <div class="bg-circle c3"></div>
+  </div>
+  <div class="grid-lines"></div>
+
+  <!-- Main Card -->
+  <div class="wrapper" id="mainCard">
+
+    <!-- Left Decorative Panel -->
+    <div class="panel-left">
+      <!-- Badge -->
+      <div class="school-badge">
+        <div class="badge-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/>
+            <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
+          </svg>
+        </div>
+        <div class="school-name">
+          Academia Portal
+          <span>Student Learning System</span>
+        </div>
+      </div>
+
+      <!-- Hero Text -->
+      <div class="panel-hero">
+        <h1>
+          Welcome<br>Back,
+          <em>Student.</em>
+        </h1>
+        <p>Sign in with your credentials provided by your class teacher to access your personalized learning dashboard.</p>
+      </div>
+
+      <!-- Notice -->
+      <div class="notice-box">
+        <div class="notice-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-1-5h2v2h-2v-2zm0-8h2v6h-2V7z"/></svg>
+        </div>
+        <div class="notice-text">
+          <strong>Credentials from Teacher Only</strong>
+          Your username and password are issued by your teacher. Do not share them with others.
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Form Panel -->
+    <div class="panel-right" style="position:relative;">
+
+      <div class="form-header">
+        <h2>Sign In</h2>
+        <p>Enter the credentials your teacher gave you</p>
+      </div>
+
+      <form id="loginForm" novalidate>
+
+        <!-- Username -->
+        <div class="form-group" id="grpUser">
+          <label class="form-label" for="username">Student Username</label>
+          <div class="input-wrap">
+            <div class="input-icon">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <input
+              type="text"
+              id="username"
+              class="form-input"
+              placeholder="e.g. student_2025"
+              autocomplete="username"
+              spellcheck="false"
+            />
+          </div>
+          <span class="field-error" id="userError">Please enter your username.</span>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group" id="grpPass">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-wrap">
+            <div class="input-icon">
+              <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <input
+              type="password"
+              id="password"
+              class="form-input"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+            />
+            <button type="button" class="toggle-pw" id="togglePw" aria-label="Toggle password">
+              <svg id="eyeIcon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <span class="field-error" id="passError">Please enter your password.</span>
+        </div>
+
+        <!-- Remember + Help -->
+        <div class="extras-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="remember"/>
+            <span class="custom-check">
+              <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+            </span>
+            Remember me
+          </label>
+          <a href="#" class="help-link">Need help?</a>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn-login" id="loginBtn">
+          <span class="btn-text">Sign In to Portal</span>
+          <div class="spinner"></div>
+        </button>
+
+      </form>
+
+      <p class="footer-note">
+        Credentials are assigned by your class teacher only.<br>
+        Contact your teacher if you have not received yours.
+      </p>
+
+      <!-- Success Overlay -->
+      <div class="success-overlay" id="successOverlay">
+        <div class="success-circle">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h3>Welcome!</h3>
+        <p>Redirecting to your dashboard...</p>
+      </div>
+
+    </div>
+  </div>
+```html
+<!-- KEEP EVERYTHING SAME ABOVE -->
+
+<script>
+  // Toggle password visibility (UNCHANGED)
+  const pwInput   = document.getElementById('password');
+  const toggleBtn = document.getElementById('togglePw');
+  const eyeIcon   = document.getElementById('eyeIcon');
+
+  const eyeOpen   = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+  const eyeClosed = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+
+  let shown = false;
+  toggleBtn.addEventListener('click', () => {
+    shown = !shown;
+    pwInput.type = shown ? 'text' : 'password';
+    eyeIcon.innerHTML = shown ? eyeClosed : eyeOpen;
+  });
+
+  // ===== REAL LOGIN STARTS HERE =====
+  const form      = document.getElementById('loginForm');
+  const btn       = document.getElementById('loginBtn');
+  const grpUser   = document.getElementById('grpUser');
+  const grpPass   = document.getElementById('grpPass');
+  const success   = document.getElementById('successOverlay');
+
+  function validate(field, group) {
+    if (!field.value.trim()) {
+      group.classList.add('has-error');
+      return false;
+    }
+    group.classList.remove('has-error');
+    return true;
+  }
+
+  document.getElementById('username').addEventListener('input', () => grpUser.classList.remove('has-error'));
+  document.getElementById('password').addEventListener('input', () => grpPass.classList.remove('has-error'));
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    const uOk = validate(document.getElementById('username'), grpUser);
+    const pOk = validate(document.getElementById('password'), grpPass);
+    if (!uOk || !pOk) return;
+
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    // 🔥 REAL API CALL
+    fetch("login.php", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ username, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+      btn.classList.remove('loading');
+      btn.disabled = false;
+
+      if (data.status === "success") {
+
+        success.classList.add('show');
+
+        setTimeout(() => {
+          window.location.href = data.dashboard; // 🔥 different dashboard
+        }, 1500);
+
+      } else {
+        grpPass.classList.add('has-error');
+        document.getElementById('passError').innerText = data.message;
+      }
+
+    })
+    .catch(() => {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      alert("Server error");
+    });
+
+  });
+
+  function login() {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+fetch("login.php", {
+  method: "POST",
+  headers: {"Content-Type": "application/json"},
+  body: JSON.stringify({ username, password })
+})
+.then(res => res.json())
+.then(data => {
+  if (data.status === "success") {
+    window.location.href = data.dashboard; // ✅ now works
+  } else {
+    alert(data.message);
+  }
+});
+}
+</script>
+
+
