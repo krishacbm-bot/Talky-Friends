@@ -1,0 +1,4 @@
+services:
+  - type: web
+    name: talky-friends
+    env: docker
